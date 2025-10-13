@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Sun, Moon, LogOut, User } from 'lucide-react';
+import { Sun, Moon, LogOut, User, ActivitySquare } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../hooks/useAuth';
 import { NAV_LINKS } from '../../constants';
@@ -15,13 +15,24 @@ const Header: React.FC = () => {
     if (location.pathname === '/perfil') {
       return 'Meu Perfil';
     }
-    const currentLink = NAV_LINKS.find(link => link.href === location.pathname);
+    const currentLink = NAV_LINKS.find(link => {
+      // Handle nested routes like /empresas/{id}
+      if (link.href !== '/' && location.pathname.startsWith(link.href)) {
+        return true;
+      }
+      return link.href === location.pathname;
+    });
     return currentLink ? currentLink.label : 'Dashboard';
   };
 
   return (
     <header className="h-20 bg-white dark:bg-gray-800 flex-shrink-0 flex items-center justify-between px-6 lg:px-8 border-b border-gray-200 dark:border-gray-700">
-      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">{getPageTitle()}</h2>
+      <div className="flex items-center gap-4">
+        <Link to="/" className="lg:hidden">
+          <ActivitySquare size={28} className="text-fit-dark-blue dark:text-white" />
+        </Link>
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white">{getPageTitle()}</h2>
+      </div>
       <div className="flex items-center space-x-4">
         <button
           onClick={toggleTheme}

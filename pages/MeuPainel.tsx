@@ -15,17 +15,22 @@ const MeuPainel: React.FC = () => {
     // Here, we simulate it by finding the employee with a matching ID from mock data.
     const funcionario = user ? getFuncionarioById(user.id) : undefined;
 
-    if (!user || user.papel !== 'Funcionário') {
-        return <AccessDenied message="Esta página é destinada apenas para funcionários." />;
+    if (!user) {
+        return <div className="flex justify-center items-center h-full"><Spinner /></div>;
+    }
+
+    if (user.papel !== 'Funcionário') {
+        return <AccessDenied 
+            title="Acesso Negado"
+            message="Esta página é um painel pessoal destinado apenas para funcionários." 
+        />;
     }
 
     if (!funcionario) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-                <Spinner />
-                <p className="mt-4 text-fit-gray">Carregando seus dados...</p>
-            </div>
-        );
+        return <AccessDenied 
+            title="Dados não encontrados"
+            message="Não foi possível carregar os seus dados de funcionário. Por favor, contate o suporte." 
+        />;
     }
 
     const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas } = funcionario;

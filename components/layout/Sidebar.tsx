@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { NAV_LINKS } from '../../constants';
-import { Settings, LifeBuoy, MessageSquarePlus } from 'lucide-react';
+import { Settings, LifeBuoy, MessageSquarePlus, ActivitySquare } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import FeedbackModal from '../ui/FeedbackModal';
 
@@ -16,9 +16,10 @@ const Sidebar: React.FC = () => {
   return (
     <>
       <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
-        <div className="h-20 flex items-center px-6">
+        <Link to="/" className="h-20 flex items-center px-6 gap-3">
+          <ActivitySquare size={32} className="text-fit-dark-blue dark:text-white flex-shrink-0" />
           <h1 className="text-2xl font-bold text-fit-dark-blue dark:text-white">FitBusiness</h1>
-        </div>
+        </Link>
         <nav className="flex-1 px-4 py-4 space-y-2">
           {visibleLinks.map((link) => (
             <NavLink

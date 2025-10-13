@@ -10,6 +10,7 @@ import { Empresa } from '../types';
 
 type Tab = 'risco' | 'previsoes' | 'relatorios';
 
+// TAB COMPONENT: AnaliseRiscoTab
 const AnaliseRiscoTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
     const allEmpresas = useMemo(() => generateMockEmpresas(), []);
 
@@ -31,12 +32,7 @@ const AnaliseRiscoTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
         return generateIrsTimeline();
     }, [empresaId, dataEmpresas]);
 
-    const getIrsRiskLevel = (irs: number) => {
-        if (irs >= 80) return { label: 'Baixo Risco' };
-        if (irs >= 50) return { label: 'Médio Risco' };
-        return { label: 'Alto Risco' };
-    };
-
+    const getIrsRiskLevel = (irs: number) => ({ label: irs >= 80 ? 'Baixo Risco' : irs >= 50 ? 'Médio Risco' : 'Alto Risco' });
     const riskLevel = getIrsRiskLevel(mediaIrs);
 
     return (
@@ -45,24 +41,23 @@ const AnaliseRiscoTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
                 <Card 
                     title={empresaId ? "IRS da Empresa" : "IRS Médio Global"}
                     value={mediaIrs} 
-                    icon={<TrendingDown />}
+                    icon={<TrendingDown className="text-fit-dark-blue"/>}
                     change={riskLevel.label}
                     changeType={mediaIrs < 50 ? 'negative' : 'positive'}
                 />
-                <Card title="Empresas em Alto Risco" value={empresasAltoRisco} icon={<ShieldHalf />} />
-                <Card title="Empresas em Médio Risco" value={empresasMedioRisco} icon={<ShieldCheck />} />
+                <Card title="Empresas em Alto Risco" value={empresasAltoRisco} icon={<ShieldHalf className="text-fit-dark-blue"/>} />
+                <Card title="Empresas em Médio Risco" value={empresasMedioRisco} icon={<ShieldCheck className="text-fit-dark-blue"/>} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-semibold">{empresaId ? "Variação do IRS da Empresa" : "Variação do IRS Global"} (6 meses)</h3>
+                <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">{empresaId ? "Variação do IRS da Empresa" : "Variação do IRS Global"} (6 meses)</h3>
                     <ResponsiveContainer width="100%" height={350}>
                         <LineChart data={irsTimeline}>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                            <XAxis dataKey="date" />
-                            <YAxis domain={[0, 100]} />
+                            <XAxis dataKey="date" tick={{ fill: '#8A94A6', fontSize: 12 }} />
+                            <YAxis domain={[0, 100]} tick={{ fill: '#8A94A6', fontSize: 12 }}/>
                             <Tooltip />
-                            <Legend />
                             <Line type="monotone" dataKey="irs" name="IRS" stroke="#F6AD55" strokeWidth={2} />
                         </LineChart>
                     </ResponsiveContainer>
@@ -73,6 +68,7 @@ const AnaliseRiscoTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
     );
 };
 
+// TAB COMPONENT: PrevisoesTendenciasTab
 const PrevisoesTendenciasTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
     const predictionData = useMemo(() => generateFitScorePrediction(), [empresaId]);
     const otherPredictions = useMemo(() => generateOtherPredictions(), [empresaId]);
@@ -81,12 +77,12 @@ const PrevisoesTendenciasTab: React.FC<{ empresaId?: string }> = ({ empresaId })
         <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                    <h3 className="text-lg font-semibold mb-4">Previsão de FitScore {empresaId ? "da Empresa" : "Global"} (4 semanas)</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Previsão de FitScore {empresaId ? "da Empresa" : "Global"} (4 semanas)</h3>
                     <ResponsiveContainer width="100%" height={350}>
                         <LineChart data={predictionData}>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
-                            <XAxis dataKey="date" />
-                            <YAxis domain={[60, 90]} />
+                            <XAxis dataKey="date" tick={{ fill: '#8A94A6', fontSize: 12 }} />
+                            <YAxis domain={[60, 90]} tick={{ fill: '#8A94A6', fontSize: 12 }} />
                             <Tooltip />
                             <Legend />
                             <Line type="monotone" dataKey="real" name="FitScore Real" stroke="#0A2342" strokeWidth={2} connectNulls />
@@ -96,7 +92,7 @@ const PrevisoesTendenciasTab: React.FC<{ empresaId?: string }> = ({ empresaId })
                 </div>
                 <InsightCard promptKey="previsao" title="Alerta Preditivo (IA)" />
             </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Outras Previsões</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                     <div>
@@ -123,6 +119,7 @@ const PrevisoesTendenciasTab: React.FC<{ empresaId?: string }> = ({ empresaId })
     );
 };
 
+// TAB COMPONENT: RelatoriosInteligentesTab
 const RelatoriosInteligentesTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
     const allEmpresas = useMemo(() => generateMockEmpresas(), []);
     const currentCompany = useMemo(() => allEmpresas.find(e => e.empresaId === empresaId), [empresaId, allEmpresas]);
@@ -130,25 +127,44 @@ const RelatoriosInteligentesTab: React.FC<{ empresaId?: string }> = ({ empresaId
     return (
         <div className="space-y-6">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                <h3 className="text-xl font-semibold mb-6">Gerador de Relatórios</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Gerador de Relatórios Inteligentes</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <label htmlFor="empresa" className="block text-sm font-medium">Empresa</label>
-                        <select id="empresa" disabled={!!empresaId} value={empresaId || 'Todas'} className="mt-1 w-full" >
+                        <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Empresa</label>
+                        <select id="empresa" disabled={!!empresaId} value={empresaId || 'Todas'} className="mt-1 block w-full rounded-md border-gray-300 disabled:bg-gray-200 dark:disabled:bg-gray-600" >
                             {empresaId && currentCompany ? (
                                 <option value={currentCompany.empresaId}>{currentCompany.nomeEmpresa}</option>
                             ) : (
                                 <>
-                                <option value="Todas">Todas</option>
+                                <option value="Todas">Todas as Empresas</option>
                                 {allEmpresas.map(e => <option key={e.empresaId} value={e.empresaId}>{e.nomeEmpresa}</option>)}
                                 </>
                             )}
                         </select>
                     </div>
-                    {/* Other filters */}
+                     <div>
+                        <label htmlFor="periodo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Período</label>
+                        <select id="periodo" className="mt-1 block w-full rounded-md border-gray-300">
+                            <option>Últimos 30 dias</option>
+                            <option>Últimos 3 meses</option>
+                            <option>Último ano</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="setor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Setor</label>
+                        <select id="setor" className="mt-1 block w-full rounded-md border-gray-300">
+                            <option>Todos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="indicador" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Indicador</label>
+                        <select id="indicador" className="mt-1 block w-full rounded-md border-gray-300">
+                            <option>Todos</option>
+                        </select>
+                    </div>
                 </div>
                 <div className="mt-6 flex justify-end">
-                    <button className="flex items-center bg-gray-200 px-4 py-2 rounded-lg"><FileDown size={16} className="mr-2"/>Exportar</button>
+                    <button className="flex items-center bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"><FileDown size={16} className="mr-2"/>Exportar</button>
                 </div>
             </div>
             <InsightCard promptKey="relatorio" title="Resumo do Relatório (IA)" />
@@ -156,9 +172,12 @@ const RelatoriosInteligentesTab: React.FC<{ empresaId?: string }> = ({ empresaId
     );
 };
 
+// MAIN COMPONENT: PainelAnalitico
 const PainelAnalitico: React.FC = () => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<Tab>('risco');
+    
+    // Determine the company ID for filtering if the user is a client admin
     const empresaIdForClient = user?.papel === 'Gerente RH' ? user.empresaId : undefined;
 
     const renderContent = () => {
@@ -172,17 +191,17 @@ const PainelAnalitico: React.FC = () => {
 
     const tabs = [
         { id: 'risco', label: 'Análise de Risco', icon: <BarChart3 size={16} /> },
-        { id: 'previsoes', label: 'Previsões', icon: <LineChartIcon size={16} /> },
-        { id: 'relatorios', label: 'Relatórios', icon: <FileTextIcon size={16} /> },
+        { id: 'previsoes', label: 'Previsões e Tendências', icon: <LineChartIcon size={16} /> },
+        { id: 'relatorios', label: 'Relatórios Inteligentes', icon: <FileTextIcon size={16} /> },
     ];
 
     return (
         <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
-                <nav className="flex space-x-2 sm:space-x-6" aria-label="Tabs">
+            <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-xl shadow-md">
+                <nav className="flex space-x-1 sm:space-x-4" aria-label="Tabs">
                     {tabs.map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id as Tab)}
-                            className={`flex items-center py-3 px-2 sm:px-4 border-b-2 font-medium text-sm transition-colors
+                            className={`flex items-center justify-center flex-1 sm:flex-initial py-3 px-2 sm:px-4 border-b-2 font-medium text-sm transition-colors
                             ${activeTab === tab.id 
                                 ? 'border-fit-dark-blue text-fit-dark-blue dark:border-fit-orange dark:text-fit-orange' 
                                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'}`}

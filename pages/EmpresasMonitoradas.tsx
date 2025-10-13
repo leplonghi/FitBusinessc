@@ -1,364 +1,413 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { generateMockEmpresas, generateMockFuncionarios } from '../lib/mockData';
-import { ArrowLeft, Search, Mail, Briefcase, Calendar, BarChart2, TrendingDown, Moon, Zap, X, AlertTriangle, Smile, ChevronDown, FileText, Plus, ShieldAlert, Edit, Trash2, Building, CheckCircle, Link as LinkIcon, ArrowUp, ArrowDown as ArrowDownIcon } from 'lucide-react';
+import { 
+    ArrowLeft, Building, Users, Activity, BarChart2, AlertTriangle, Search, TrendingDown, X, Edit, Mail, Briefcase, Calendar, Moon, Zap, Smile, ShieldAlert, Filter, UserCheck, BarChartHorizontal, PieChart as PieChartIcon 
+} from 'lucide-react';
+// Fix: Add BarChart to recharts import to resolve 'BarChart is not defined' error.
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, Radar, PieChart, Pie, Cell, Bar, BarChart } from 'recharts';
 import { Empresa, Funcionario, RiscoNivel, Setor } from '../types';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import Card from '../components/ui/Card';
 import { useAuth } from '../hooks/useAuth';
-import AccessDenied from '../components/ui/AccessDenied';
+import Card from '../components/ui/Card';
+import Spinner from '../components/ui/Spinner';
 
-// MODALS AND SUB-COMPONENTS START
-// ===============================
+// --- HELPER FUNCTIONS & STYLES ---
 
 const getRiscoClass = (risco: RiscoNivel) => {
     switch (risco) {
-        case 'Alto': return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
-        case 'Médio': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
-        default: return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
+      case 'Alto': return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
+      case 'Médio': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
+      default: return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
     }
 };
 
-const ErrorDisplay: React.FC<{ message: string }> = ({ message }) => (
-    <div className="flex flex-col items-center justify-center h-64 text-center">
-        <AlertTriangle size={48} className="text-fit-red mb-4" />
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Ocorreu um Erro</h3>
-        <p className="mt-2 text-sm text-fit-gray">{message}</p>
-    </div>
-);
+const PIE_COLORS = ['#E53E3E', '#F6AD55', '#48BB78']; // Alto, Médio, Baixo
 
-const CompanyModal: React.FC<{
-    isOpen: boolean;
+// --- MODAL: DETALHES DO FUNCIONÁRIO ---
+
+const FuncionarioDetalheModal: React.FC<{
+    funcionario: Funcionario | null;
     onClose: () => void;
-    onSave: (company: Omit<Empresa, 'empresaId' | 'funcionariosAtivos' | 'mediaFitScore' | 'taxaEngajamento' | 'alertasRisco'>) => void;
-    companyToEdit: Empresa | null;
-}> = ({ isOpen, onClose, onSave, companyToEdit }) => {
-    const [name, setName] = useState('');
-    const [status, setStatus] = useState<'Ativa' | 'Inativa'>('Ativa');
-    const [irs, setIrs] = useState(75);
-    const [website, setWebsite] = useState('');
-    const [nameError, setNameError] = useState('');
-    const [websiteError, setWebsiteError] = useState('');
-
-    useEffect(() => {
-        if (isOpen) {
-            if (companyToEdit) {
-                setName(companyToEdit.nomeEmpresa);
-                setStatus(companyToEdit.status);
-                setIrs(companyToEdit.irs);
-                setWebsite(companyToEdit.website || '');
-            } else {
-                setName(''); setStatus('Ativa'); setIrs(75); setWebsite('');
-            }
-            setNameError('');
-            setWebsiteError('');
-        }
-    }, [isOpen, companyToEdit]);
-
-    if (!isOpen) return null;
-
-    const isValidUrl = (urlString: string) => {
-        try {
-            const pattern = new RegExp('^(https?:\\/\\/)?' + '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + '((\\d{1,3}\\.){3}\\d{1,3}))' + '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + '(\\?[;&a-z\\d%_.~+=-]*)?' + '(\\#[-a-z\\d_]*)?$', 'i');
-            return !!pattern.test(urlString);
-        } catch (e) { return false; }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        let hasErrors = false;
-        if (!name.trim()) { setNameError("O nome da empresa é obrigatório."); hasErrors = true; } else { setNameError(''); }
-        if (website.trim() && !isValidUrl(website)) { setWebsiteError("Por favor, insira uma URL válida."); hasErrors = true; } else { setWebsiteError(''); }
-        if (hasErrors) return;
-        onSave({ nomeEmpresa: name, status, irs: Number(irs), website });
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{companyToEdit ? 'Editar Empresa' : 'Adicionar Empresa'}</h3>
-                    <button onClick={onClose}><X size={24} /></button>
-                </div>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                     <div>
-                        <label>Nome</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} required />
-                        {nameError && <p className="text-xs text-red-500">{nameError}</p>}
-                    </div>
-                     <div>
-                        <label>Website</label>
-                        <input type="url" value={website} onChange={e => setWebsite(e.target.value)} />
-                         {websiteError && <p className="text-xs text-red-500">{websiteError}</p>}
-                    </div>
-                     <div>
-                        <label>Status</label>
-                        <select value={status} onChange={e => setStatus(e.target.value as 'Ativa' | 'Inativa')}>
-                            <option>Ativa</option><option>Inativa</option>
-                        </select>
-                    </div>
-                     <div>
-                        <label>IRS</label>
-                        <input type="number" value={irs} onChange={e => setIrs(Number(e.target.value))} min="0" max="100"/>
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                        <button type="button" onClick={onClose}>Cancelar</button>
-                        <button type="submit">{companyToEdit ? 'Salvar' : 'Adicionar'}</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-const FuncionarioModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (data: Omit<Funcionario, 'id' | 'avatarUrl' | 'historicoFitScore' | 'metricas' | 'risco' | 'empresaNome'>, funcId: string | null) => void;
-    funcionarioToEdit: Funcionario | null;
-    empresa: Empresa;
-}> = ({ isOpen, onClose, onSave, funcionarioToEdit, empresa }) => {
-    const [formData, setFormData] = useState({
-        nome: '', email: '', cargo: '', setor: 'Tecnologia' as Setor, dataAdmissao: new Date().toISOString().split('T')[0], fitScore: 75,
-    });
-    useEffect(() => {
-        if (isOpen) {
-            setFormData(funcionarioToEdit ? {
-                nome: funcionarioToEdit.nome, email: funcionarioToEdit.email, cargo: funcionarioToEdit.cargo, setor: funcionarioToEdit.setor, dataAdmissao: funcionarioToEdit.dataAdmissao, fitScore: funcionarioToEdit.fitScore
-            } : {
-                nome: '', email: '', cargo: '', setor: 'Tecnologia' as Setor, dataAdmissao: new Date().toISOString().split('T')[0], fitScore: 75
-            });
-        }
-    }, [isOpen, funcionarioToEdit]);
-
-    if (!isOpen) return null;
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave({ ...formData, fitScore: Number(formData.fitScore), empresaId: empresa.empresaId }, funcionarioToEdit?.id || null);
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-                <h3 className="text-xl font-semibold mb-6">{funcionarioToEdit ? 'Editar Funcionário' : 'Adicionar Funcionário'}</h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Simplified form fields */}
-                    <input type="text" name="nome" value={formData.nome} onChange={handleChange} placeholder="Nome" required />
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" required />
-                    <input type="text" name="cargo" value={formData.cargo} onChange={handleChange} placeholder="Cargo" required />
-                    <div className="flex justify-end space-x-3">
-                        <button type="button" onClick={onClose}>Cancelar</button>
-                        <button type="submit">{funcionarioToEdit ? 'Salvar' : 'Adicionar'}</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-
-// ... Other modals like FuncionarioDetalheModal, ComparisonModal can be defined here ...
-
-
-// MAIN VIEWS (LIST AND DETAIL)
-// ============================
-
-const EmpresaDetalhe: React.FC<{ 
-    empresa: Empresa; 
-    onBack: () => void;
-    allFuncionarios: Funcionario[];
-    onFuncionariosChange: (funcionarios: Funcionario[]) => void;
-}> = ({ empresa, onBack, allFuncionarios, onFuncionariosChange }) => {
+}> = ({ funcionario, onClose }) => {
     const { user } = useAuth();
-    const isSuperAdmin = user?.papel === 'superadmin';
+    
+    if (!funcionario) return null;
 
-    const [funcionariosDaEmpresa, setFuncionariosDaEmpresa] = useState(() => allFuncionarios.filter(f => f.empresaId === empresa.empresaId));
-    const [isFuncionarioModalOpen, setIsFuncionarioModalOpen] = useState(false);
-    const [funcionarioToEdit, setFuncionarioToEdit] = useState<Funcionario | null>(null);
+    const canEdit = user?.papel === 'superadmin';
 
-    useEffect(() => {
-        setFuncionariosDaEmpresa(allFuncionarios.filter(f => f.empresaId === empresa.empresaId));
-    }, [allFuncionarios, empresa.empresaId]);
+    const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas } = funcionario;
 
-    const handleSaveFuncionario = (data: Omit<Funcionario, 'id' | 'avatarUrl' | 'historicoFitScore' | 'metricas' | 'risco'| 'empresaNome'>, funcId: string | null) => {
-        let updatedFuncionarios;
-        // Fix: Explicitly type risco to ensure it matches RiscoNivel.
-        const risco: RiscoNivel = data.fitScore < 60 ? 'Alto' : data.fitScore < 80 ? 'Médio' : 'Baixo';
-        const completeData = { ...data, empresaNome: empresa.nomeEmpresa, risco };
-        if (funcId) {
-             updatedFuncionarios = allFuncionarios.map(f => f.id === funcId ? { ...f, ...completeData } : f);
-        } else {
-            const newFunc: Funcionario = { ...completeData, id: `f${Date.now()}`, avatarUrl: `https://i.pravatar.cc/150?u=f${Date.now()}`, historicoFitScore: [], metricas: { sono: 7, estresse: 50, humor: 4, energia: 4 } };
-            updatedFuncionarios = [newFunc, ...allFuncionarios];
-        }
-        onFuncionariosChange(updatedFuncionarios);
-        setIsFuncionarioModalOpen(false);
-    };
-
-    const handleDeleteFuncionario = (funcId: string) => {
-        if (window.confirm("Tem certeza?")) {
-            onFuncionariosChange(allFuncionarios.filter(f => f.id !== funcId));
-        }
-    };
+    const metricasData = [
+        { subject: 'Sono', value: (metricas.sono / 8) * 100 },
+        { subject: 'Estresse', value: 100 - metricas.estresse },
+        { subject: 'Humor', value: (metricas.humor / 5) * 100 },
+        { subject: 'Energia', value: (metricas.energia / 5) * 100 },
+    ];
 
     return (
-        <>
-            <div className="space-y-6">
-                <button onClick={onBack} className="flex items-center text-sm"><ArrowLeft size={16} className="mr-2"/>Voltar para Empresas</button>
-                <h2 className="text-3xl font-bold">{empresa.nomeEmpresa}</h2>
-                {user?.papel !== 'superadmin' && (
-                     <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-300 p-4 rounded-md" role="alert">
-                         <p className="font-bold">Modo de Consulta</p>
-                         <p className="text-sm">Você está visualizando os dados da sua empresa. A edição de dados é restrita a administradores.</p>
-                     </div>
-                )}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-semibold">Funcionários</h3>
-                        {isSuperAdmin && <button onClick={() => { setFuncionarioToEdit(null); setIsFuncionarioModalOpen(true);}} className="flex items-center bg-fit-dark-blue text-white px-4 py-2 rounded-lg"><Plus size={16} className="mr-2"/>Adicionar Funcionário</button>}
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
+            <div 
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" 
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex justify-between items-center p-4 border-b dark:border-gray-700 flex-shrink-0">
+                    <div className="flex items-center space-x-4">
+                        <img src={avatarUrl} alt={nome} className="w-12 h-12 rounded-full" />
+                        <div>
+                             <h3 className="text-xl font-bold text-gray-800 dark:text-white">{nome}</h3>
+                             <p className="text-sm text-fit-gray">{cargo}</p>
+                        </div>
                     </div>
-                     <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr><th>Nome</th><th>Cargo</th><th>FitScore</th><th>Ações</th></tr>
-                            </thead>
-                            <tbody>
-                                {funcionariosDaEmpresa.map(func => (
-                                    <tr key={func.id}>
-                                        <td>{func.nome}</td><td>{func.cargo}</td><td>{func.fitScore}</td>
-                                        <td>
-                                            {isSuperAdmin && (
-                                                <>
-                                                <button onClick={() => { setFuncionarioToEdit(func); setIsFuncionarioModalOpen(true); }} className="mr-2"><Edit size={16} /></button>
-                                                <button onClick={() => handleDeleteFuncionario(func.id)}><Trash2 size={16} /></button>
-                                                </>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <FuncionarioModal isOpen={isFuncionarioModalOpen} onClose={() => setIsFuncionarioModalOpen(false)} onSave={handleSaveFuncionario} funcionarioToEdit={funcionarioToEdit} empresa={empresa} />
-        </>
-    );
-};
-
-
-const EmpresasMonitoradas: React.FC = () => {
-    const { user } = useAuth();
-    const [allEmpresas, setAllEmpresas] = useState<Empresa[]>([]);
-    const [allFuncionarios, setAllFuncionarios] = useState<Funcionario[]>([]);
-    const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
-    const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-    const [companyToEdit, setCompanyToEdit] = useState<Empresa | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'Ativa' | 'Inativa'>('all');
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Empresa; direction: 'asc' | 'desc' } | null>({ key: 'nomeEmpresa', direction: 'asc' });
-
-    const isSuperAdmin = user?.papel === 'superadmin';
-
-    useEffect(() => {
-        const mockEmpresas = generateMockEmpresas();
-        const mockFuncionarios = generateMockFuncionarios();
-        setAllEmpresas(mockEmpresas);
-        setAllFuncionarios(mockFuncionarios);
-
-        if (!isSuperAdmin && user?.empresaId) {
-            const userEmpresa = mockEmpresas.find(e => e.empresaId === user.empresaId);
-            setSelectedEmpresa(userEmpresa || null);
-        }
-    }, [user, isSuperAdmin]);
-
-    const handleSaveCompany = (companyData: Omit<Empresa, 'empresaId' | 'funcionariosAtivos' | 'mediaFitScore' | 'taxaEngajamento' | 'alertasRisco'>) => {
-        let updatedEmpresas;
-        if (companyToEdit) {
-            updatedEmpresas = allEmpresas.map(emp => emp.empresaId === companyToEdit.empresaId ? { ...emp, ...companyData } : emp);
-        } else {
-            const newCompany: Empresa = { ...companyData, empresaId: `e${Date.now()}`, funcionariosAtivos: 0, mediaFitScore: 70, taxaEngajamento: 80, alertasRisco: 0, irsHistory: [] };
-            updatedEmpresas = [newCompany, ...allEmpresas];
-        }
-        setAllEmpresas(updatedEmpresas);
-        setIsCompanyModalOpen(false);
-        setCompanyToEdit(null);
-    };
-
-    const handleDeleteCompany = (empresaId: string) => {
-        if(window.confirm("Tem certeza que deseja excluir esta empresa?")) {
-            const updatedEmpresas = allEmpresas.filter(e => e.empresaId !== empresaId);
-            setAllEmpresas(updatedEmpresas);
-            // Also remove employees of that company
-            setAllFuncionarios(allFuncionarios.filter(f => f.empresaId !== empresaId));
-        }
-    };
-
-    const filteredAndSortedEmpresas = useMemo(() => {
-        let filtered = allEmpresas.filter(e => (statusFilter === 'all' || e.status === statusFilter) && e.nomeEmpresa.toLowerCase().includes(searchTerm.toLowerCase()));
-        if (sortConfig) {
-            filtered.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return filtered;
-    }, [allEmpresas, searchTerm, statusFilter, sortConfig]);
-
-
-    if (selectedEmpresa) {
-        return <EmpresaDetalhe 
-            empresa={selectedEmpresa} 
-            onBack={() => isSuperAdmin && setSelectedEmpresa(null)}
-            allFuncionarios={allFuncionarios}
-            onFuncionariosChange={setAllFuncionarios}
-        />;
-    }
-
-    if (!isSuperAdmin) {
-        return <AccessDenied title="Nenhuma empresa associada" message="Não encontramos uma empresa para seu perfil ou você não tem permissão para ver esta lista." />;
-    }
-
-    // Superadmin Company List View
-    return (
-        <>
-            <div className="space-y-6">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-semibold">Gestão de Empresas</h3>
-                        <button onClick={() => { setCompanyToEdit(null); setIsCompanyModalOpen(true); }} className="flex items-center bg-fit-dark-blue text-white px-4 py-2 rounded-lg">
-                            <Plus size={16} className="mr-2" />
-                            Adicionar Empresa
+                    <div className="flex items-center gap-4">
+                        {canEdit && (
+                            <button className="flex items-center bg-fit-dark-blue text-white px-3 py-1.5 rounded-lg text-sm">
+                                <Edit size={14} className="mr-2"/> Editar
+                            </button>
+                        )}
+                        <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
+                            <X size={24} />
                         </button>
                     </div>
-                     <div className="overflow-x-auto">
-                        <table className="w-full">
-                           <thead><tr><th>Nome</th><th>Status</th><th>IRS</th><th>Ações</th></tr></thead>
-                            <tbody>
-                                {filteredAndSortedEmpresas.map(empresa => (
-                                    <tr key={empresa.empresaId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                        <td className="px-6 py-4 cursor-pointer" onClick={() => setSelectedEmpresa(empresa)}>{empresa.nomeEmpresa}</td>
-                                        <td>{empresa.status}</td>
-                                        <td>{empresa.irs}</td>
-                                        <td className="px-6 py-4 text-right">
-                                             <button onClick={() => { setCompanyToEdit(empresa); setIsCompanyModalOpen(true); }} className="mr-4"><Edit size={16} /></button>
-                                             <button onClick={() => handleDeleteCompany(empresa.empresaId)}><Trash2 size={16} /></button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-6 overflow-y-auto">
+                    {/* Personal Info & Metrics */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-1 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg space-y-3">
+                             <h4 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 mb-2">Informações</h4>
+                             <p className="flex items-center text-sm"><Briefcase size={14} className="mr-2 text-fit-gray"/> <strong>Empresa:</strong><span className="ml-2">{empresaNome}</span></p>
+                             <p className="flex items-center text-sm"><Mail size={14} className="mr-2 text-fit-gray"/> <strong>Email:</strong><span className="ml-2">{email}</span></p>
+                             <p className="flex items-center text-sm"><Calendar size={14} className="mr-2 text-fit-gray"/> <strong>Admissão:</strong><span className="ml-2">{new Date(dataAdmissao).toLocaleDateString('pt-BR')}</span></p>
+                        </div>
+                         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                            <Card title="FitScore Atual" value={fitScore} icon={<BarChart2 size={20} className="text-fit-dark-blue"/>} />
+                            <Card title="Nível de Risco" value={risco} icon={<ShieldAlert size={20} className="text-fit-dark-blue"/>} />
+                        </div>
+                    </div>
+                    
+                    {/* Charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <div className="lg:col-span-3 bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
+                             <div className="flex justify-between items-center mb-4">
+                                <h4 className="font-semibold text-gray-800 dark:text-white">Evolução do FitScore</h4>
+                                <select className="text-xs border-gray-300 rounded-md dark:bg-gray-700">
+                                    <option>Últimos 12 meses</option>
+                                    <option>Últimos 6 meses</option>
+                                </select>
+                             </div>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <LineChart data={historicoFitScore}>
+                                    <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
+                                    <XAxis dataKey="date" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR', { month: 'short' })} tick={{ fontSize: 10 }} />
+                                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }}/>
+                                    <Tooltip />
+                                    <Line type="monotone" dataKey="score" name="FitScore" stroke="#0A2342" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
+                            <h4 className="font-semibold text-gray-800 dark:text-white mb-4">Pilares de Bem-estar</h4>
+                            <ResponsiveContainer width="100%" height={250}>
+                                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metricasData}>
+                                    <PolarGrid />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
+                                    <Radar name={nome} dataKey="value" stroke="#0A2342" fill="#0A2342" fillOpacity={0.6} />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Activity History */}
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
+                        <h4 className="font-semibold text-gray-800 dark:text-white mb-4">Histórico de Atividades</h4>
+                        <p className="text-sm text-center text-fit-gray py-4">Funcionalidade de histórico de participação em programas em desenvolvimento.</p>
                     </div>
                 </div>
             </div>
-            <CompanyModal isOpen={isCompanyModalOpen} onClose={() => setIsCompanyModalOpen(false)} onSave={handleSaveCompany} companyToEdit={companyToEdit} />
-        </>
+        </div>
     );
 };
+
+
+// --- VIEW: DETALHES DA EMPRESA ---
+
+const EmpresaDetalheView: React.FC<{
+    empresa: Empresa;
+    funcionarios: Funcionario[];
+    onBack: () => void;
+    showBackButton: boolean;
+}> = ({ empresa, funcionarios, onBack, showBackButton }) => {
+    
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedFuncionario, setSelectedFuncionario] = useState<Funcionario | null>(null);
+    
+    // Filters State
+    const [filters, setFilters] = useState({
+        cargo: 'all',
+        setor: 'all',
+        risco: 'all',
+    });
+
+    const uniqueCargos = useMemo(() => [...new Set(funcionarios.map(f => f.cargo))], [funcionarios]);
+    const uniqueSetores = useMemo(() => [...new Set(funcionarios.map(f => f.setor))], [funcionarios]);
+
+    const filteredFuncionarios = useMemo(() => {
+        return funcionarios.filter(f => {
+            const searchMatch = searchTerm === '' || f.nome.toLowerCase().includes(searchTerm.toLowerCase()) || f.email.toLowerCase().includes(searchTerm.toLowerCase());
+            const cargoMatch = filters.cargo === 'all' || f.cargo === filters.cargo;
+            const setorMatch = filters.setor === 'all' || f.setor === filters.setor;
+            const riscoMatch = filters.risco === 'all' || f.risco === filters.risco;
+            return searchMatch && cargoMatch && setorMatch && riscoMatch;
+        });
+    }, [funcionarios, searchTerm, filters]);
+
+    const fitScoreDistribution = useMemo(() => {
+        const counts = { 'Alto': 0, 'Médio': 0, 'Baixo': 0 };
+        filteredFuncionarios.forEach(f => {
+            counts[f.risco]++;
+        });
+        return [
+            { name: 'Alto Risco', value: counts['Alto'] },
+            { name: 'Médio Risco', value: counts['Médio'] },
+            { name: 'Baixo Risco', value: counts['Baixo'] },
+        ];
+    }, [filteredFuncionarios]);
+    
+    const engagementBySector = useMemo(() => {
+        const sectors: { [key in Setor]?: { total: number, count: number } } = {};
+        filteredFuncionarios.forEach(f => {
+             if (!sectors[f.setor]) sectors[f.setor] = { total: 0, count: 0 };
+             sectors[f.setor]!.total += f.fitScore; // using fitscore as proxy for engagement
+             sectors[f.setor]!.count++;
+        });
+        return Object.entries(sectors).map(([name, data]) => ({ name, engajamento: Math.round(data.total / data.count) }));
+    }, [filteredFuncionarios]);
+
+    const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
+        setFilters(prev => ({ ...prev, [filterName]: value }));
+    };
+
+    return (
+        <>
+        <div className="space-y-6">
+             {showBackButton && (
+                <button onClick={onBack} className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                    <ArrowLeft size={16} className="mr-2" />
+                    Voltar para a lista de empresas
+                </button>
+             )}
+
+            {/* Header */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                    <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <Building size={40} className="text-fit-dark-blue dark:text-white" />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                         <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{empresa.nomeEmpresa}</h2>
+                         <p className="text-fit-gray mt-1">{empresa.setor} • {empresa.funcionariosAtivos} funcionários</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Metrics & Charts */}
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-800 dark:text-white mb-2 p-2">Distribuição de FitScore</h3>
+                     <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                             <Pie data={fitScoreDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5}>
+                                {fitScoreDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index]} />)}
+                            </Pie>
+                            <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-800 dark:text-white mb-2 p-2">Engajamento por Setor</h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                       <BarChart data={engagementBySector} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                           <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
+                           <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} />
+                           <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10 }} />
+                           <Tooltip />
+                           <Bar dataKey="engajamento" fill="#0A2342" barSize={20} />
+                       </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+            
+            {/* Employee List & Filters */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Painel de Funcionários</h3>
+                {/* Filter Bar */}
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                    <div className="relative md:col-span-2">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                        <input type="text" placeholder="Buscar funcionário..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-9"/>
+                    </div>
+                    <select value={filters.cargo} onChange={e => handleFilterChange('cargo', e.target.value)}>
+                        <option value="all">Todos os Cargos</option>
+                        {uniqueCargos.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                     <select value={filters.risco} onChange={e => handleFilterChange('risco', e.target.value)}>
+                        <option value="all">Todos os Riscos</option>
+                        <option value="Alto">Alto</option>
+                        <option value="Médio">Médio</option>
+                        <option value="Baixo">Baixo</option>
+                    </select>
+                </div>
+
+                {/* Employee Table */}
+                <div className="overflow-x-auto max-h-96">
+                    <table className="w-full text-sm">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 sticky top-0">
+                            <tr>
+                                <th className="px-4 py-2 text-left">Nome</th>
+                                <th className="px-4 py-2 text-left">Cargo</th>
+                                <th className="px-4 py-2 text-center">FitScore</th>
+                                <th className="px-4 py-2 text-center">Risco</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredFuncionarios.length > 0 ? filteredFuncionarios.map(f => (
+                                <tr key={f.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onClick={() => setSelectedFuncionario(f)}>
+                                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white flex items-center gap-3">
+                                        <img src={f.avatarUrl} alt={f.nome} className="w-8 h-8 rounded-full" />
+                                        {f.nome}
+                                    </td>
+                                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{f.cargo}</td>
+                                    <td className="px-4 py-3 text-center font-bold">{f.fitScore}</td>
+                                    <td className="px-4 py-3 text-center">
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRiscoClass(f.risco)}`}>{f.risco}</span>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan={4} className="text-center py-8 text-gray-500">Nenhum funcionário encontrado com os filtros aplicados.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <FuncionarioDetalheModal 
+            funcionario={selectedFuncionario}
+            onClose={() => setSelectedFuncionario(null)}
+        />
+        </>
+    )
+}
+
+// --- VIEW: LISTA DE EMPRESAS ---
+
+const EmpresaListView: React.FC<{
+    empresas: Empresa[];
+    onSelectEmpresa: (id: string) => void;
+}> = ({ empresas, onSelectEmpresa }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    
+    const filteredEmpresas = useMemo(() => {
+        return empresas.filter(e => e.nomeEmpresa.toLowerCase().includes(searchTerm.toLowerCase()));
+    }, [empresas, searchTerm]);
+    
+    return (
+        <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Empresas Monitoradas</h2>
+                        <p className="text-fit-gray mt-1">Selecione uma empresa para ver detalhes sobre seu bem-estar.</p>
+                    </div>
+                    <div className="w-full md:w-1/3 relative">
+                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                         <input type="text" placeholder="Buscar empresa..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10"/>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredEmpresas.map(empresa => (
+                    <div 
+                        key={empresa.empresaId}
+                        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg hover:border-fit-dark-blue dark:hover:border-fit-orange transition-all cursor-pointer"
+                        onClick={() => onSelectEmpresa(empresa.empresaId)}
+                    >
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">{empresa.nomeEmpresa}</h3>
+                        <div className="mt-6 space-y-3">
+                            <div className="flex justify-between text-sm"><span className="text-fit-gray">FitScore Médio</span><span className="font-semibold">{empresa.mediaFitScore}</span></div>
+                            <div className="flex justify-between text-sm"><span className="text-fit-gray">Alertas</span><span className="font-semibold text-red-500">{empresa.alertasRisco}</span></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+
+// Fix: Define props interface to resolve 'Cannot find name 'EmpresasMonitoradasProps'' error.
+interface EmpresasMonitoradasProps {
+    allEmpresas: Empresa[];
+    allFuncionarios: Funcionario[];
+}
+
+// --- COMPONENTE PRINCIPAL ---
+
+const EmpresasMonitoradas: React.FC<EmpresasMonitoradasProps> = ({ allEmpresas, allFuncionarios }) => {
+    const { user } = useAuth();
+    const [selectedEmpresaId, setSelectedEmpresaId] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const empresasVisiveis = useMemo(() => {
+        if (!user) return [];
+        if (user.papel === 'superadmin') return allEmpresas;
+        if (user.papel === 'Gerente RH' && user.empresaId) {
+            return allEmpresas.filter(e => e.empresaId === user.empresaId);
+        }
+        return [];
+    }, [allEmpresas, user]);
+
+    useEffect(() => {
+        setIsLoading(true);
+        if (user?.papel === 'Gerente RH' && empresasVisiveis.length === 1) {
+            setSelectedEmpresaId(empresasVisiveis[0].empresaId);
+        } else {
+            // Reset selection if user is admin or has no single company
+            setSelectedEmpresaId(null);
+        }
+        setIsLoading(false);
+    }, [user, allEmpresas]); // Rerun when user or data changes
+
+    const selectedEmpresa = useMemo(() => {
+        return allEmpresas.find(e => e.empresaId === selectedEmpresaId);
+    }, [selectedEmpresaId, allEmpresas]);
+    
+    const funcionariosDaEmpresa = useMemo(() => {
+        if (!selectedEmpresaId) return [];
+        return allFuncionarios.filter(f => f.empresaId === selectedEmpresaId);
+    }, [selectedEmpresaId, allFuncionarios]);
+    
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-full"><Spinner /></div>;
+    }
+
+    // Determine which view to render
+    if (selectedEmpresa) {
+        return (
+            <EmpresaDetalheView 
+                empresa={selectedEmpresa} 
+                funcionarios={funcionariosDaEmpresa} 
+                onBack={() => setSelectedEmpresaId(null)}
+                showBackButton={user?.papel === 'superadmin'}
+            />
+        )
+    }
+    
+    // Default to list view for superadmin
+    return <EmpresaListView empresas={empresasVisiveis} onSelectEmpresa={setSelectedEmpresaId} />
+}
 
 export default EmpresasMonitoradas;

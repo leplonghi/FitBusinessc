@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, Trash2, X, Search, Building, AlertTriangle, CheckCircle, ArrowDown, ArrowUp, Link as LinkIcon } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { generateMockEmpresas } from '../lib/mockData';
-import { Empresa } from '../types';
+import { Empresa, Setor } from '../types';
 import Card from '../components/ui/Card';
 import { useAuth } from '../hooks/useAuth';
 import AccessDenied from '../components/ui/AccessDenied';
@@ -14,29 +14,41 @@ const CompanyModal: React.FC<{
   onSave: (company: Omit<Empresa, 'empresaId' | 'funcionariosAtivos' | 'mediaFitScore' | 'taxaEngajamento' | 'alertasRisco'>) => void;
   companyToEdit: Empresa | null;
 }> = ({ isOpen, onClose, onSave, companyToEdit }) => {
-    const [name, setName] = useState('');
-    const [status, setStatus] = useState<'Ativa' | 'Inativa'>('Ativa');
-    const [irs, setIrs] = useState(75);
-    const [website, setWebsite] = useState('');
-    const [nameError, setNameError] = useState('');
-    const [websiteError, setWebsiteError] = useState('');
+    // Fix: Use a single state object for the form data to match the Empresa type.
+    const initialFormState: Omit<Empresa, 'empresaId' | 'funcionariosAtivos' | 'mediaFitScore' | 'taxaEngajamento' | 'alertasRisco' | 'irsHistory'> = {
+        nomeEmpresa: '',
+        status: 'Ativa',
+        irs: 75,
+        website: '',
+        cnpj: '',
+        setor: 'Tecnologia',
+        cultura: '',
+        dataCriacao: new Date().toISOString().split('T')[0],
+        endereco: { rua: '', bairro: '', cidade: '', cep: '' },
+        contato: { email: '', telefone: '' },
+    };
+    const [formData, setFormData] = useState(initialFormState);
+    const [errors, setErrors] = useState<any>({});
 
     useEffect(() => {
-        if (isOpen && companyToEdit) {
-            setName(companyToEdit.nomeEmpresa);
-            setStatus(companyToEdit.status);
-            setIrs(companyToEdit.irs);
-            setWebsite(companyToEdit.website || '');
-            setNameError('');
-            setWebsiteError('');
-        } else {
-            // Reset for adding a new company
-            setName('');
-            setStatus('Ativa');
-            setIrs(75);
-            setWebsite('');
-            setNameError('');
-            setWebsiteError('');
+        if (isOpen) {
+            if (companyToEdit) {
+                 setFormData({
+                    nomeEmpresa: companyToEdit.nomeEmpresa,
+                    status: companyToEdit.status,
+                    irs: companyToEdit.irs,
+                    website: companyToEdit.website || '',
+                    cnpj: companyToEdit.cnpj,
+                    setor: companyToEdit.setor,
+                    cultura: companyToEdit.cultura,
+                    dataCriacao: companyToEdit.dataCriacao,
+                    endereco: companyToEdit.endereco,
+                    contato: companyToEdit.contato,
+                });
+            } else {
+                setFormData(initialFormState);
+            }
+            setErrors({});
         }
     }, [isOpen, companyToEdit]);
 
@@ -57,33 +69,52 @@ const CompanyModal: React.FC<{
         }
     };
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        const keys = name.split('.');
+
+        if (keys.length > 1) {
+            setFormData(prev => ({
+                ...prev,
+                [keys[0]]: { ...prev[keys[0] as keyof typeof prev] as object, [keys[1]]: value }
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+        
+        if (errors[name]) {
+            setErrors((prev: any) => ({ ...prev, [name]: '' }));
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        let hasErrors = false;
+        const newErrors: any = {};
         
-        if (!name.trim()) {
-            setNameError("O nome da empresa é obrigatório.");
-            hasErrors = true;
-        } else {
-            setNameError('');
+        if (!formData.nomeEmpresa.trim()) {
+            newErrors.nomeEmpresa = "O nome da empresa é obrigatório.";
         }
-
-        if (website.trim() && !isValidUrl(website)) {
-            setWebsiteError("Por favor, insira uma URL válida (ex: https://site.com).");
-            hasErrors = true;
-        } else {
-            setWebsiteError('');
+        if (formData.website && formData.website.trim() && !isValidUrl(formData.website)) {
+            newErrors.website = "Por favor, insira uma URL válida (ex: https://site.com).";
         }
+        if (!formData.cnpj.trim()) {
+            newErrors.cnpj = "O CNPJ é obrigatório.";
+        }
+        
+        setErrors(newErrors);
 
-        if (hasErrors) return;
+        if (Object.keys(newErrors).length > 0) return;
 
-        onSave({ nomeEmpresa: name, status, irs: Number(irs), website });
+        // Fix: Pass the complete formData object to onSave, ensuring it matches the expected type.
+        onSave({ ...formData, irs: Number(formData.irs) });
     };
+
+    const setores: Setor[] = ['Tecnologia', 'Indústria', 'Logística', 'Varejo', 'Saúde'];
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+                 <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
                     <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
                         {companyToEdit ? 'Editar Empresa' : 'Adicionar Nova Empresa'}
                     </h3>
@@ -92,66 +123,132 @@ const CompanyModal: React.FC<{
                     </button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div className="space-y-4">
+                    <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                         <div>
-                            <label htmlFor="company-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome da Empresa</label>
+                            <label htmlFor="nomeEmpresa" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome da Empresa</label>
                             <input 
                                 type="text" 
-                                id="company-name"
-                                value={name}
-                                onChange={e => {
-                                    setName(e.target.value)
-                                    if (nameError) setNameError('');
-                                }}
-                                className={`mt-1 block w-full px-3 py-2 border ${nameError ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 ${nameError ? 'dark:border-red-500' : 'dark:border-gray-600'} sm:text-sm`}
+                                id="nomeEmpresa"
+                                name="nomeEmpresa"
+                                value={formData.nomeEmpresa}
+                                onChange={handleChange}
+                                className={`mt-1 block w-full px-3 py-2 border ${errors.nomeEmpresa ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 ${errors.nomeEmpresa ? 'dark:border-red-500' : 'dark:border-gray-600'} sm:text-sm`}
                                 required
-                                aria-describedby="company-name-error"
                             />
-                            {nameError && <p id="company-name-error" className="mt-1 text-xs text-red-600 dark:text-red-400">{nameError}</p>}
+                            {errors.nomeEmpresa && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.nomeEmpresa}</p>}
                         </div>
+
                         <div>
-                            <label htmlFor="company-website" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Website URL (Opcional)</label>
+                            <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CNPJ</label>
+                            <input 
+                                type="text" 
+                                id="cnpj"
+                                name="cnpj"
+                                value={formData.cnpj}
+                                onChange={handleChange}
+                                className={`mt-1 block w-full px-3 py-2 border ${errors.cnpj ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 ${errors.cnpj ? 'dark:border-red-500' : 'dark:border-gray-600'} sm:text-sm`}
+                                required
+                            />
+                            {errors.cnpj && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.cnpj}</p>}
+                        </div>
+                        
+                        <div>
+                            <label htmlFor="website" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Website URL (Opcional)</label>
                             <input
                                 type="url"
-                                id="company-website"
-                                value={website}
-                                onChange={e => {
-                                    setWebsite(e.target.value)
-                                    if (websiteError) setWebsiteError('');
-                                }}
+                                id="website"
+                                name="website"
+                                value={formData.website}
+                                onChange={handleChange}
                                 placeholder="https://suaempresa.com"
-                                className={`mt-1 block w-full px-3 py-2 border ${websiteError ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 ${websiteError ? 'dark:border-red-500' : 'dark:border-gray-600'} sm:text-sm`}
-                                aria-describedby="company-website-error"
+                                className={`mt-1 block w-full px-3 py-2 border ${errors.website ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 ${errors.website ? 'dark:border-red-500' : 'dark:border-gray-600'} sm:text-sm`}
                             />
-                            {websiteError && <p id="company-website-error" className="mt-1 text-xs text-red-600 dark:text-red-400">{websiteError}</p>}
+                            {errors.website && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.website}</p>}
                         </div>
-                        <div>
-                            <label htmlFor="company-status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="setor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Setor</label>
                             <select 
-                                id="company-status"
-                                value={status}
-                                onChange={e => setStatus(e.target.value as 'Ativa' | 'Inativa')}
+                                id="setor"
+                                name="setor"
+                                value={formData.setor}
+                                onChange={handleChange}
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 dark:border-gray-600 sm:text-sm rounded-md"
                             >
-                                <option>Ativa</option>
-                                <option>Inativa</option>
+                                {setores.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
-                        </div>
-                        <div>
-                            <label htmlFor="company-irs" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Índice de Risco de Saúde (IRS)</label>
+                          </div>
+                          <div>
+                            <label htmlFor="dataCriacao" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Criação</label>
                             <input 
-                                type="number" 
-                                id="company-irs"
-                                value={irs}
-                                onChange={e => setIrs(parseInt(e.target.value, 10))}
+                                type="date"
+                                id="dataCriacao"
+                                name="dataCriacao"
+                                value={formData.dataCriacao}
+                                onChange={handleChange}
                                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 dark:border-gray-600 sm:text-sm"
-                                min="0"
-                                max="100"
-                                required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                            <label htmlFor="cultura" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cultura da Empresa</label>
+                            <textarea
+                                id="cultura"
+                                name="cultura"
+                                value={formData.cultura}
+                                onChange={handleChange}
+                                rows={2}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 dark:border-gray-600 sm:text-sm"
                             />
                         </div>
+
+                        <h4 className="font-semibold pt-2 border-t dark:border-gray-700">Endereço</h4>
+                        <input name="endereco.rua" value={formData.endereco.rua} onChange={handleChange} placeholder="Rua e Número" className="block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input name="endereco.bairro" value={formData.endereco.bairro} onChange={handleChange} placeholder="Bairro"  className="block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                            <input name="endereco.cidade" value={formData.endereco.cidade} onChange={handleChange} placeholder="Cidade e Estado"  className="block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                            <input name="endereco.cep" value={formData.endereco.cep} onChange={handleChange} placeholder="CEP"  className="block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+
+                        <h4 className="font-semibold pt-2 border-t dark:border-gray-700">Contato</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input name="contato.email" type="email" value={formData.contato.email} onChange={handleChange} placeholder="Email de Contato" className="block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                            <input name="contato.telefone" value={formData.contato.telefone} onChange={handleChange} placeholder="Telefone" className="block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t dark:border-gray-700">
+                            <div>
+                                <label htmlFor="company-status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                                <select 
+                                    id="company-status"
+                                    name="status"
+                                    value={formData.status}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 dark:border-gray-600 sm:text-sm rounded-md"
+                                >
+                                    <option value="Ativa">Ativa</option>
+                                    <option value="Inativa">Inativa</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="company-irs" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Índice de Risco de Saúde (IRS)</label>
+                                <input 
+                                    type="number" 
+                                    id="company-irs"
+                                    name="irs"
+                                    value={formData.irs}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue dark:bg-gray-700 dark:border-gray-600 sm:text-sm"
+                                    min="0"
+                                    max="100"
+                                    required
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div className="mt-6 flex justify-end space-x-3">
+                    <div className="p-6 bg-gray-50 dark:bg-gray-900/50 flex justify-end space-x-3 rounded-b-lg">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                             Cancelar
                         </button>

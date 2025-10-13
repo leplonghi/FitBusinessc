@@ -9,11 +9,36 @@ const CARGOS_VAREJO = ['Gerente de Loja', 'Vendedor', 'Analista de Estoque'];
 const CARGOS_SAUDE = ['Enfermeiro(a)', 'Analista Clínico', 'Coordenador de Atendimento'];
 
 const EMPRESAS_BASE: Omit<Empresa, 'funcionariosAtivos' | 'mediaFitScore' | 'taxaEngajamento' | 'alertasRisco' | 'irsHistory'>[] = [
-    { empresaId: 'e1', nomeEmpresa: 'InovaTech Soluções', status: 'Ativa', irs: 85, website: 'https://example.com' },
-    { empresaId: 'e2', nomeEmpresa: 'Manufatura Forte', status: 'Ativa', irs: 65, website: 'https://example.com' },
-    { empresaId: 'e3', nomeEmpresa: 'LogiExpress Brasil', status: 'Ativa', irs: 48 },
-    { empresaId: 'e4', nomeEmpresa: 'Varejo Ponto Certo', status: 'Inativa', irs: 72 },
-    { empresaId: 'e5', nomeEmpresa: 'Clínica Bem Viver', status: 'Ativa', irs: 92, website: 'https://example.com' },
+    { 
+        empresaId: 'e1', nomeEmpresa: 'InovaTech Soluções', status: 'Ativa', irs: 85, website: 'https://inova.tech',
+        cnpj: '33.072.207/0001-60', setor: 'Tecnologia', cultura: 'Ágil e Colaborativa', dataCriacao: '2018-03-15',
+        endereco: { rua: 'Av. das Nações Unidas, 12901', bairro: 'Brooklin Paulista', cidade: 'São Paulo, SP', cep: '04578-910' },
+        contato: { email: 'contato@inova.tech', telefone: '(11) 98765-4321' }
+    },
+    { 
+        empresaId: 'e2', nomeEmpresa: 'Manufatura Forte', status: 'Ativa', irs: 65, website: 'https://manufaturaforte.com.br',
+        cnpj: '44.182.318/0001-71', setor: 'Indústria', cultura: 'Focada em Segurança', dataCriacao: '2010-07-22',
+        endereco: { rua: 'Rua da Indústria, 500', bairro: 'Distrito Industrial', cidade: 'Joinville, SC', cep: '89219-500' },
+        contato: { email: 'rh@manufaturaforte.com.br', telefone: '(47) 91234-5678' }
+    },
+    { 
+        empresaId: 'e3', nomeEmpresa: 'LogiExpress Brasil', status: 'Ativa', irs: 48,
+        cnpj: '55.293.429/0001-82', setor: 'Logística', cultura: 'Orientada a Resultados', dataCriacao: '2015-11-01',
+        endereco: { rua: 'Rod. Anhanguera, km 100', bairro: 'Jardim Eulina', cidade: 'Campinas, SP', cep: '13063-400' },
+        contato: { email: 'operacoes@logiexpress.com', telefone: '(19) 95555-4444' }
+    },
+    { 
+        empresaId: 'e4', nomeEmpresa: 'Varejo Ponto Certo', status: 'Inativa', irs: 72,
+        cnpj: '66.304.530/0001-93', setor: 'Varejo', cultura: 'Foco no Cliente', dataCriacao: '2012-01-30',
+        endereco: { rua: 'Rua Sete de Setembro, 1234', bairro: 'Centro', cidade: 'Curitiba, PR', cep: '80010-000' },
+        contato: { email: 'suporte@varejopontocerto.com', telefone: '(41) 93333-2222' }
+    },
+    { 
+        empresaId: 'e5', nomeEmpresa: 'Clínica Bem Viver', status: 'Ativa', irs: 92, website: 'https://clinicabemviver.med.br',
+        cnpj: '77.415.641/0001-04', setor: 'Saúde', cultura: 'Cuidado e Empatia', dataCriacao: '2020-05-10',
+        endereco: { rua: 'Av. Angélica, 2578', bairro: 'Consolação', cidade: 'São Paulo, SP', cep: '01228-200' },
+        contato: { email: 'adm@clinicabemviver.med.br', telefone: '(11) 97777-8888' }
+    },
 ];
 
 const SETORES: Setor[] = ['Tecnologia', 'Indústria', 'Logística', 'Varejo', 'Saúde'];
@@ -46,10 +71,7 @@ const generateFuncionarios = () => {
     let funcionarioId = 1;
     EMPRESAS_BASE.forEach(empresaBase => {
         const numFuncionarios = getRandomInt(50, 150);
-        const setor = empresaBase.nomeEmpresa === 'InovaTech Soluções' ? 'Tecnologia' :
-                      empresaBase.nomeEmpresa === 'Manufatura Forte' ? 'Indústria' :
-                      empresaBase.nomeEmpresa === 'LogiExpress Brasil' ? 'Logística' :
-                      empresaBase.nomeEmpresa === 'Varejo Ponto Certo' ? 'Varejo' : 'Saúde';
+        const setor = empresaBase.setor;
         
         const cargos = setor === 'Tecnologia' ? CARGOS_TECNOLOGIA :
                        setor === 'Indústria' ? CARGOS_INDUSTRIA :

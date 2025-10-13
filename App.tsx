@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -12,6 +12,9 @@ import RegistroAtividades from './pages/RegistroAtividades';
 import Integracoes from './pages/Integracoes';
 import PainelAnalitico from './pages/PainelAnalitico';
 import Perfil from './pages/Perfil';
+import Onboarding from './pages/Onboarding';
+import { Empresa, Funcionario } from './types';
+import { generateMockEmpresas, generateMockFuncionarios } from './lib/mockData';
 
 
 // Component to handle role-based redirection from the root path
@@ -25,6 +28,7 @@ const HomeRedirect: React.FC = () => {
     case 'Funcionário':
       return <Navigate to="/meu-painel" replace />;
     case 'Gerente RH':
+      // Direct RH Managers to their company's monitoring page
       return <Navigate to="/empresas" replace />;
     default:
       return <VisaoGeral />;
@@ -32,6 +36,15 @@ const HomeRedirect: React.FC = () => {
 };
 
 function App() {
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+
+  useEffect(() => {
+    // Initialize data once
+    setEmpresas(generateMockEmpresas());
+    setFuncionarios(generateMockFuncionarios());
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -40,12 +53,13 @@ function App() {
             <Routes>
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/meu-painel" element={<MeuPainel />} />
-              <Route path="/empresas" element={<EmpresasMonitoradas />} />
+              <Route path="/empresas" element={<EmpresasMonitoradas allEmpresas={empresas} setAllEmpresas={setEmpresas} allFuncionarios={funcionarios} setAllFuncionarios={setFuncionarios} />} />
               <Route path="/alertas" element={<CentralAlertas />} />
               <Route path="/painel-analitico" element={<PainelAnalitico />} />
               <Route path="/auditoria" element={<RegistroAtividades />} />
               <Route path="/integracoes" element={<Integracoes />} />
               <Route path="/perfil" element={<Perfil />} />
+              <Route path="/onboarding" element={<Onboarding setEmpresas={setEmpresas} setFuncionarios={setFuncionarios} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Building, BarChart3, Settings, User, Bell, History, Zap, Users as UsersIcon } from 'lucide-react';
+import { LayoutDashboard, Building, BarChart3, User, Bell } from 'lucide-react';
 import { Papel } from './types';
 
 interface NavLinkConfig {
@@ -9,8 +9,13 @@ interface NavLinkConfig {
   roles: Papel[]; // Defines which roles can see this link
 }
 
+/**
+ * Defines the primary navigation links for the application.
+ * This list is filtered by user role to create a tailored navigation experience.
+ * The menu is now streamlined to essential items as per the latest requirements.
+ */
 export const NAV_LINKS: NavLinkConfig[] = [
-  // Dashboards
+  // Core Dashboards & Monitoring
   { 
     href: '/', 
     label: 'Visão Geral', 
@@ -25,7 +30,7 @@ export const NAV_LINKS: NavLinkConfig[] = [
   },
   { 
     href: '/empresas', 
-    label: 'Empresas', 
+    label: 'Empresas Monitoradas', // Updated label for clarity
     icon: <Building size={20} />, 
     roles: ['superadmin', 'Gerente RH'] 
   },
@@ -36,7 +41,7 @@ export const NAV_LINKS: NavLinkConfig[] = [
     roles: ['superadmin', 'Gerente RH'] 
   },
   
-  // Analytics Hub
+  // Consolidated Analytics Hub
   { 
     href: '/painel-analitico', 
     label: 'Painel Analítico', 
@@ -44,17 +49,7 @@ export const NAV_LINKS: NavLinkConfig[] = [
     roles: ['superadmin', 'Gerente RH'] 
   },
 
-  // Management (Admin Only)
-   { 
-    href: '/auditoria', 
-    label: 'Registro de Atividades', 
-    icon: <History size={20} />, 
-    roles: ['superadmin'] 
-  },
-  { 
-    href: '/integracoes', 
-    label: 'Integrações', 
-    icon: <Zap size={20} />, 
-    roles: ['superadmin'] 
-  },
+  // Note: Administrative links like 'Registro de Atividades' (/auditoria) and 
+  // 'Integrações' (/integracoes) are not in the main navigation to keep the UI focused.
+  // The routes still exist in App.tsx for direct access by admins.
 ];

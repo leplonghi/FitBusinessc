@@ -37,6 +37,18 @@ export interface Funcionario {
   };
 }
 
+export interface Endereco {
+  rua: string;
+  bairro: string;
+  cidade: string;
+  cep: string;
+}
+
+export interface Contato {
+  telefone: string;
+  email: string;
+}
+
 export interface Empresa {
   empresaId: string;
   nomeEmpresa: string;
@@ -48,6 +60,13 @@ export interface Empresa {
   alertasRisco: number;
   website?: string;
   irsHistory?: { date: string; irs: number }[];
+  // New detailed fields
+  cnpj: string;
+  setor: Setor;
+  cultura: string;
+  dataCriacao: string;
+  endereco: Endereco;
+  contato: Contato;
 }
 
 export type RiscoNivel = 'Alto' | 'Médio' | 'Baixo';

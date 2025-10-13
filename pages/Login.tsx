@@ -1,136 +1,141 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ActivitySquare, Mail, Key, Eye, EyeOff } from 'lucide-react';
-import { authService } from '../services/authService';
-import Spinner from '../components/ui/Spinner';
+import { ActivitySquare, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { FirebaseError } from 'firebase/app';
+import { isFirebaseConfigured } from '../services/authService';
 
 const Login: React.FC = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const from = location.state?.from?.pathname || "/";
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { signInWithEmail, signInWithGoogle } = useAuth();
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+  const from = location.state?.from?.pathname || '/';
 
-    const handleAuthError = (err: any) => {
-        if (err.code === 'auth/api-key-not-valid') {
-            setError('Configuração do Firebase inválida. Verifique suas credenciais de API no ambiente.');
-        } else if (err.code === 'auth/invalid-credential') {
-            setError('Email ou senha inválidos. Tente novamente.');
+  // Check if Firebase is configured. If not, disable login and show a warning.
+  const isConfigured = isFirebaseConfigured;
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isConfigured) return;
+    setError('');
+    setLoading(true);
+
+    try {
+      const user = await signInWithEmail(email, password);
+      if (user) {
+        navigate(from, { replace: true });
+      }
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+          switch (err.code) {
+              case 'auth/user-not-found':
+              case 'auth/wrong-password':
+              case 'auth/invalid-credential':
+                  setError('Email ou senha inválidos. Por favor, tente novamente.');
+                  break;
+              case 'auth/too-many-requests':
+                  setError('Acesso bloqueado temporariamente. Tente novamente mais tarde.');
+                  break;
+              case 'auth/network-request-failed':
+                  setError('Erro de conexão. Verifique sua internet e tente novamente.');
+                  break;
+              default:
+                   setError('Ocorreu um erro ao fazer login. Por favor, tente mais tarde.');
+          }
+      } else {
+        setError('Ocorreu um erro inesperado.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (!isConfigured) return;
+    setError('');
+    setLoading(true);
+    try {
+        const user = await signInWithGoogle();
+        if (user) {
+            navigate(from, { replace: true });
         }
-        else {
-            setError(err.message || 'Ocorreu um erro durante o login.');
+    } catch (err) {
+        if (err instanceof FirebaseError) {
+             // This error occurs when the user intentionally closes the Google popup.
+             // It is a user action, not a system error, so we don't show a message.
+             if (err.code === 'auth/popup-closed-by-user') {
+                // Silently ignore this error.
+             } else {
+                setError('Falha ao autenticar com o Google. Tente novamente.');
+             }
+        } else {
+             setError('Ocorreu um erro inesperado durante o login com o Google.');
         }
+    } finally {
         setLoading(false);
     }
+  }
 
-    const handleGoogleSignIn = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            await authService.signInWithGoogle();
-            navigate(from, { replace: true });
-        } catch (err: any) {
-            handleAuthError(err);
-        }
-    };
-
-    const handleEmailSignIn = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-        try {
-            await authService.signInWithEmail(email, password);
-            navigate(from, { replace: true });
-        } catch (err: any) {
-             handleAuthError(err);
-        }
-    };
-    
-    return (
-        <div className="min-h-screen bg-fit-light-gray flex flex-col justify-center items-center p-4">
-            <div className="w-full max-w-sm">
-                <div className="flex justify-center items-center mb-6">
-                    <ActivitySquare size={40} className="text-fit-dark-blue" />
-                    <h1 className="ml-3 text-3xl font-bold text-fit-dark-blue">FitBusiness</h1>
-                </div>
-
-                <div className="bg-white p-8 rounded-xl shadow-lg border">
-                    <h2 className="text-2xl font-semibold text-center text-gray-800 mb-2">Bem-vindo(a) de volta!</h2>
-                    <p className="text-center text-fit-gray mb-6">Acesse seu painel para monitorar a saúde da sua equipe.</p>
-                    
-                    {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg text-sm text-center mb-4">{error}</p>}
-                    
-                    <form onSubmit={handleEmailSignIn} className="space-y-4">
-                        <div>
-                           <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
-                            <div className="relative mt-1">
-                                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-                                <input 
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="seu.email@empresa.com"
-                                    required
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                           <label htmlFor="password"className="text-sm font-medium text-gray-700">Senha</label>
-                           <div className="relative mt-1">
-                                <Key size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-                                <input 
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Sua senha"
-                                    required
-                                    className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
-                                />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                    {showPassword ? <EyeOff size={16}/> : <Eye size={16} />}
-                                </button>
-                           </div>
-                        </div>
-                         <button 
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-fit-dark-blue text-white py-2.5 rounded-lg font-semibold hover:bg-opacity-90 transition-colors flex justify-center items-center disabled:bg-gray-400"
-                        >
-                            {loading ? <Spinner /> : 'Entrar'}
-                        </button>
-                    </form>
-
-                    <div className="relative my-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-300"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-gray-500">OU</span>
-                        </div>
-                    </div>
-
-                    <button 
-                        onClick={handleGoogleSignIn} 
-                        disabled={loading}
-                        className="w-full flex justify-center items-center py-2.5 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    >
-                         <img src="https://www.google.com/favicon.ico" alt="Google icon" className="w-5 h-5 mr-3" />
-                         Entrar com Google
-                    </button>
-                </div>
-                 <p className="text-center text-xs text-fit-gray mt-6">
-                    Ao fazer login, você concorda com nossos Termos de Serviço e Política de Privacidade.
-                </p>
-            </div>
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+            <ActivitySquare size={48} className="mx-auto text-fit-dark-blue dark:text-white" />
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">FitBusiness</h1>
+            <p className="mt-2 text-sm text-fit-gray">
+              Acesse sua conta para gerenciar o bem-estar da sua equipe.
+            </p>
         </div>
-    );
+
+        {!isConfigured && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 text-yellow-800 dark:text-yellow-300 p-4 rounded-md" role="alert">
+                <div className="flex items-center">
+                    <AlertTriangle size={20} className="mr-3" />
+                    <div>
+                        <p className="font-bold">Configuração Incompleta</p>
+                        <p className="text-sm">As credenciais do Firebase não foram configuradas. A autenticação está desativada.</p>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border dark:border-gray-700">
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={!isConfigured || loading}
+            className="group relative flex w-full justify-center items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue focus:ring-offset-2 disabled:opacity-50"
+          >
+             <svg className="w-5 h-5 mr-2 -ml-1" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 381.5 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 24.5 172.4 64.2L361.3 128C330.5 100.3 291.6 84 248 84c-83.8 0-152.3 68.5-152.3 152S164.2 410 248 410c95.7 0 146.5-74.5 150.7-111.7H248v-84.1h236.5c2.3 12.7 3.5 25.8 3.5 39.7z"></path></svg>
+             Entrar com Google
+          </button>
+           <div className="my-6 flex items-center">
+              <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+              <span className="flex-shrink mx-4 text-sm text-gray-500 dark:text-gray-400">ou</span>
+              <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+            </div>
+
+          <form className="space-y-6" onSubmit={handleEmailSubmit}>
+            <div className="space-y-4">
+              <input id="email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" placeholder="Email"/>
+              <input id="password" name="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full" placeholder="Senha"/>
+            </div>
+            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+            <div>
+              <button type="submit" disabled={!isConfigured || loading} className="group relative flex w-full justify-center rounded-md border border-transparent bg-fit-dark-blue py-2 px-4 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue focus:ring-offset-2 disabled:bg-gray-400">
+                {loading ? 'Entrando...' : 'Entrar com Email'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Login;

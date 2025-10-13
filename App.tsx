@@ -17,7 +17,11 @@ import Login from './pages/Login'; // Import the new Login page
 import { Empresa, Funcionario } from './types';
 import { generateMockEmpresas, generateMockFuncionarios } from './lib/mockData';
 
-// Component to handle role-based redirection from the root path
+/**
+ * Handles the initial redirection after a user logs in.
+ * This component inspects the user's role and navigates them to the 
+ * appropriate starting page, fulfilling the role-based redirection requirement.
+ */
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />; 
@@ -30,32 +34,42 @@ const HomeRedirect: React.FC = () => {
     case 'Gerente RH':
       return <Navigate to="/empresas" replace />;
     default:
+      // Fallback to a safe default page.
       return <VisaoGeral />;
   }
 };
 
+/**
+ * A wrapper component that protects routes from unauthenticated access.
+ * If a user is not logged in, they are redirected to the /login page.
+ */
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    // You can render a loading spinner here while checking auth state
-    return <div>Loading...</div>;
+    // Render a loading indicator while the authentication state is being checked.
+    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
   }
 
   if (!user) {
+    // Redirect unauthenticated users to the login page, saving the location they tried to access.
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;
 };
 
+/**
+ * The main application component rendered for authenticated users.
+ * It sets up the primary layout and routes, and initializes application data.
+ */
 const AuthenticatedApp: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
 
   useEffect(() => {
-    // Initialize data once a user is authenticated
+    // Initialize mock data once a user is authenticated.
     setEmpresas(generateMockEmpresas());
     setFuncionarios(generateMockFuncionarios());
   }, []);
@@ -78,7 +92,11 @@ const AuthenticatedApp: React.FC = () => {
   )
 }
 
-
+/**
+ * The root component of the application.
+ * It sets up the theme, authentication context, and main router,
+ * distinguishing between public routes (like /login) and protected routes.
+ */
 function App() {
   return (
     <ThemeProvider>

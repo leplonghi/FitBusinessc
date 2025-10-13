@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { 
     ArrowLeft, Building, Users, Search, X, Edit, Mail, Briefcase, Calendar, ShieldAlert, Target, BarChart2
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, Radar, PieChart, Pie, Cell, Bar, BarChart } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, Radar, PieChart, Pie, Cell, Bar, BarChart as RechartsBarChart } from 'recharts';
 import { Empresa, Funcionario, RiscoNivel, Setor } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import Card from '../components/ui/Card';
@@ -247,14 +247,13 @@ const EmpresaDetalheView: React.FC<{
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
                     <h3 className="font-semibold text-gray-800 dark:text-white p-2">Engajamento por Setor</h3>
                     <ResponsiveContainer width="100%" height={240}>
-                       <BarChart data={engagementBySector} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                       <RechartsBarChart data={engagementBySector} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                            <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
                            <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: '#8A94A6' }} />
                            <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10, fill: '#8A94A6' }} />
                            <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(5px)', border: '1px solid #E2E8F0', borderRadius: '0.75rem' }} cursor={{ fill: 'rgba(242, 244, 248, 0.5)' }}/>
-                           {/* Fix: Corrected the corrupted Bar component tag */}
                            <Bar dataKey="engajamento" name="Engajamento" fill="#0A2342" />
-                       </BarChart>
+                       </RechartsBarChart>
                     </ResponsiveContainer>
                 </div>
             </div>

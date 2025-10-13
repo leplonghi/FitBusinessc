@@ -4,11 +4,10 @@ import { Sun, Moon, LogOut, User, ActivitySquare } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../hooks/useAuth';
 import { NAV_LINKS } from '../../constants';
-import { authService } from '../../services/authService';
 
 const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth(); // Use signOut from hook
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -28,7 +27,7 @@ const Header: React.FC = () => {
 
   const handleLogout = async () => {
     setDropdownOpen(false);
-    await authService.signOut();
+    await signOut(); // Use the new signOut function
     navigate('/login');
   };
 

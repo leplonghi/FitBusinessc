@@ -1,102 +1,117 @@
-// This file encapsulates all Firebase authentication logic.
-// In a real application, the Firebase configuration would be stored in secure environment variables.
-// For this project, we'll use placeholder values.
-
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { 
-    getAuth, 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    signInWithEmailAndPassword, 
-    signOut,
-    User as FirebaseUser
+  getAuth, 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut as firebaseSignOut,
+  Auth,
+  User as FirebaseUser,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
-import { User, Papel } from '../types';
+import { User } from '../types';
 
-// Check for environment variables and warn the developer if they are missing.
-const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
-if (!apiKey) {
+// --- FIREBASE CONFIGURATION ---
+
+// IMPORTANT: Replace these placeholder values with your actual Firebase project credentials.
+// For security, these should be stored in environment variables (e.g., .env file).
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY", // process.env.REACT_APP_FIREBASE_API_KEY
+  authDomain: "YOUR_AUTH_DOMAIN", // process.env.REACT_APP_FIREBASE_AUTH_DOMAIN
+  projectId: "YOUR_PROJECT_ID", // process.env.REACT_APP_FIREBASE_PROJECT_ID
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID",
+};
+
+// This flag allows the app to detect if Firebase is properly configured.
+// In a real app, you would check environment variables. Here, we check the placeholders.
+export const isFirebaseConfigured = 
+  firebaseConfig.apiKey !== "YOUR_API_KEY" && 
+  firebaseConfig.authDomain !== "YOUR_AUTH_DOMAIN";
+
+
+if (!isFirebaseConfigured) {
     console.warn(
-        "Firebase API Key is missing from environment variables (e.g., .env). " +
-        "Using placeholder keys which will cause authentication to fail. " +
-        "Please provide your Firebase project credentials."
+        `
+        *********************************************************************
+        ** ATENÇÃO: As credenciais do Firebase não estão configuradas.      **
+        ** A autenticação não funcionará. Por favor, edite o arquivo       **
+        ** 'services/authService.ts' com suas credenciais reais.            **
+        *********************************************************************
+        `
     );
 }
 
-// IMPORTANT: Replace with your actual Firebase configuration
-// and store it securely in environment variables (e.g., .env file).
-// The values below are syntactically valid placeholders to prevent initialization errors.
-const firebaseConfig = {
-  apiKey: apiKey || "AIzaSyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "fitbusiness-comet.firebaseapp.com",
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "fitbusiness-comet",
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "fitbusiness-comet.appspot.com",
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "123456789012",
-  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:123456789012:web:1234567890abcdef"
-};
-
 // Initialize Firebase
 const app: FirebaseApp = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+export const auth: Auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence);
 
-const googleProvider = new GoogleAuthProvider();
 
-// This function maps a Firebase User to your application's User type.
-// In a real app, you would fetch the user's role and companyId from your database (e.g., Firestore)
-// based on the firebaseUser.uid. For this demo, we'll assign roles based on the email.
+// --- USER MAPPING ---
+
+/**
+ * Maps a Firebase User object to our application's internal User type.
+ * This is where you would implement your role-based access control logic.
+ * 
+ * !!! SECURITY NOTE !!!
+ * In a production environment, user roles should be managed securely on the backend
+ * or using Firebase Custom Claims, not determined on the client-side based on email.
+ * This implementation is for demonstration purposes only.
+ */
 export const mapFirebaseUserToAppUser = (firebaseUser: FirebaseUser): User => {
-    let papel: Papel = 'Funcionário'; // Default role
-    let empresaId: string | undefined = undefined;
-
-    // Demo logic to assign roles based on email domain or specific emails.
-    if (firebaseUser.email?.endsWith('@fitbusiness.com')) {
-        papel = 'superadmin';
-    } else if (firebaseUser.email?.endsWith('@empresa.com')) {
-        papel = 'Gerente RH';
-        empresaId = 'e1'; // Assign to a default company for demo
-    } else {
-        papel = 'Funcionário';
-        empresaId = 'e1'; // Assign to a default company for demo
-    }
-    
+  const email = firebaseUser.email || '';
+  
+  // Demo logic for assigning roles based on email
+  if (email.toLowerCase() === 'admin@fitbusiness.com') {
     return {
-        id: firebaseUser.uid,
-        nome: firebaseUser.displayName || 'Usuário',
-        email: firebaseUser.email || 'N/A',
-        papel,
-        avatarUrl: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-        empresaId,
+      id: firebaseUser.uid,
+      nome: firebaseUser.displayName || 'Admin FitBusiness',
+      email: email,
+      papel: 'superadmin',
+      avatarUrl: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
     };
+  }
+
+  // A mapping for a client RH manager
+  if (email.toLowerCase().includes('maria.silva')) {
+     return {
+      id: firebaseUser.uid,
+      nome: firebaseUser.displayName || 'Maria Silva',
+      email: email,
+      papel: 'Gerente RH',
+      avatarUrl: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+      empresaId: 'e1' // Hardcoded for demo
+    };
+  }
+
+  // Default to 'Funcionário' role
+  return {
+    id: firebaseUser.uid,
+    nome: firebaseUser.displayName || 'Usuário',
+    email: email,
+    papel: 'Funcionário',
+    avatarUrl: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+    empresaId: 'e1' // Hardcoded for demo
+  };
 };
 
 
-export const authService = {
-  signInWithGoogle: async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
-    } catch (error) {
-      console.error("Error during Google sign-in:", error);
-      throw error;
-    }
-  },
+// --- AUTHENTICATION SERVICE FUNCTIONS ---
 
-  signInWithEmail: async (email: string, password: string) => {
-     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      return result.user;
-    } catch (error) {
-      console.error("Error during email sign-in:", error);
-      throw error;
-    }
-  },
+export const signInWithEmail = async (email: string, pass: string): Promise<FirebaseUser> => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    return userCredential.user;
+};
 
-  signOut: async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Error signing out:", error);
-      throw error;
-    }
-  },
+export const signInWithGoogle = async (): Promise<FirebaseUser> => {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
+}
+
+export const signOut = async (): Promise<void> => {
+    await firebaseSignOut(auth);
 };

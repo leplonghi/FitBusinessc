@@ -1,5 +1,3 @@
---- START OF FILE pages/MeuPainel.tsx ---
-
 import React from 'react';
 import { Mail, Briefcase, Calendar, BarChart2, TrendingDown, Moon, Zap, Smile, ShieldAlert, Target } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
@@ -138,4 +136,4 @@ const MeuPainel: React.FC = () => {
     );
 };
 
-export default MeuPainel;--- END OF FILE pages/MeuPainel.tsx ---
+export default MeuPainel;

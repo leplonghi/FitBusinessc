@@ -1,52 +1,39 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { User } from '../types';
+import { auth, mapFirebaseUserToAppUser } from '../services/authService';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean; // Add a loading state
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// To test different user roles, comment/uncomment the desired user object
-// and ensure it's assigned to the 'user' property in the AuthProvider below.
-
-// Super Admin: Full access to all data and settings, including company management.
-const superAdminUser: User = {
-  id: 'su01',
-  nome: 'Admin FitBusiness',
-  email: 'admin@fitbusiness.com',
-  papel: 'superadmin',
-  avatarUrl: 'https://i.pravatar.cc/150?u=super-admin',
-};
-
-// Client Admin: Read-only access, restricted to their own company's data.
-const clientAdminUser: User = {
-  id: 'u1',
-  nome: 'Carla Almeida',
-  email: 'carla.almeida@empresa.com',
-  papel: 'Gerente RH',
-  avatarUrl: 'https://i.pravatar.cc/150?u=carla-almeida',
-  empresaId: 'e1', // Corresponds to 'InovaTech Soluções'
-};
-
-// Employee: Read-only access to their personal dashboard only.
-const mockEmployeeUser: User = {
-    id: 'f1',
-    nome: 'Ana Lima Silva',
-    email: 'ana.lima-silva@inovatech-solucoes.com.br',
-    papel: 'Funcionário',
-    avatarUrl: 'https://i.pravatar.cc/150?u=f1',
-    empresaId: 'e1',
-};
-
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // --- SWITCH USER HERE ---
-  // Change the user to test different permission levels.
-  // superAdminUser: Full control.
-  // clientAdminUser: View-only for their company.
-  // mockEmployeeUser: View-only for personal dashboard.
-  const value = { user: superAdminUser };
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Subscribe to Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        // In a real app, you would fetch additional user details (like role and companyId) 
+        // from your database (e.g., Firestore) using firebaseUser.uid.
+        // For this demo, we'll map the Firebase user to one of our mock roles.
+        const appUser = mapFirebaseUserToAppUser(firebaseUser);
+        setUser(appUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const value = { user, loading };
 
   return React.createElement(AuthContext.Provider, { value: value }, children);
 };

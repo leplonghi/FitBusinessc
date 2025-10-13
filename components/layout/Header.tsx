@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { Sun, Moon, LogOut, User, ActivitySquare } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../hooks/useAuth';
 import { NAV_LINKS } from '../../constants';
+import { authService } from '../../services/authService';
 
 const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const getPageTitle = () => {
@@ -16,13 +18,18 @@ const Header: React.FC = () => {
       return 'Meu Perfil';
     }
     const currentLink = NAV_LINKS.find(link => {
-      // Handle nested routes like /empresas/{id}
       if (link.href !== '/' && location.pathname.startsWith(link.href)) {
         return true;
       }
       return link.href === location.pathname;
     });
     return currentLink ? currentLink.label : 'Dashboard';
+  };
+
+  const handleLogout = async () => {
+    setDropdownOpen(false);
+    await authService.signOut();
+    navigate('/login');
   };
 
   return (
@@ -57,9 +64,9 @@ const Header: React.FC = () => {
               >
                 <User size={16} className="mr-2" /> Perfil
               </Link>
-              <a href="#" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <LogOut size={16} className="mr-2" /> Sair
-              </a>
+              </button>
             </div>
           )}
         </div>

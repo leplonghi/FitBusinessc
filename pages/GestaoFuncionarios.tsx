@@ -9,6 +9,7 @@ import AccessDenied from '../components/ui/AccessDenied';
 const FuncionarioModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
+  // Fix: The 'onSave' prop should not omit 'planoExercicio', as it's being passed in the 'handleSubmit' function.
   onSave: (funcionario: Omit<Funcionario, 'id' | 'avatarUrl' | 'historicoFitScore' | 'metricas' | 'risco'>) => void;
   funcionarioToEdit: Funcionario | null;
   empresas: Empresa[];
@@ -79,10 +80,12 @@ const FuncionarioModal: React.FC<{
         const empresa = empresas.find(e => e.empresaId === formData.empresaId);
         if (!empresa) return;
 
+        // Fix: Add the required 'planoExercicio' property to satisfy the type.
         onSave({
             ...formData,
             fitScore: Number(formData.fitScore),
             empresaNome: empresa.nomeEmpresa,
+            planoExercicio: { nome: 'Caminhada Diária', meta: '10.000 passos por dia', frequencia: 'Diariamente', progresso: 0 },
         });
     };
 
@@ -226,6 +229,7 @@ const GestaoFuncionarios: React.FC = () => {
                 avatarUrl: `https://i.pravatar.cc/150?u=f${Date.now()}`,
                 historicoFitScore: [],
                 metricas: { sono: 7, estresse: 40, humor: 4, energia: 4 },
+                planoExercicio: data.planoExercicio,
             };
             setFuncionarios(prev => [newFuncionario, ...prev]);
         }

@@ -1,0 +1,126 @@
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Edit, Mail, Briefcase, Calendar, BarChart2, TrendingDown, Moon, Zap, Smile, ShieldAlert } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { getFuncionarioById } from '../lib/mockData';
+import Card from '../components/ui/Card';
+import Spinner from '../components/ui/Spinner';
+import { RiscoNivel } from '../types';
+import { useAuth } from '../hooks/useAuth';
+
+const FuncionarioDetalhe: React.FC = () => {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const funcionario = id ? getFuncionarioById(id) : undefined;
+
+    const canEdit = user && ['superadmin', 'Admin', 'Gerente RH'].includes(user.papel);
+    const isOwnProfile = user?.id === funcionario?.id;
+
+    if (!funcionario) {
+        return <div className="flex justify-center items-center h-full"><Spinner /></div>;
+    }
+
+    const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas } = funcionario;
+    
+    const getRiscoClass = (riscoNivel: RiscoNivel) => {
+        switch (riscoNivel) {
+            case 'Alto': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:bg-opacity-50 dark:text-red-300';
+            case 'Médio': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-50 dark:text-yellow-300';
+            default: return 'bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-50 dark:text-green-300';
+        }
+    };
+
+    const metricasData = [
+        { subject: 'Sono', value: (metricas.sono / 8) * 100, fullMark: 100 },
+        { subject: 'Estresse', value: 100 - metricas.estresse, fullMark: 100 },
+        { subject: 'Humor', value: (metricas.humor / 5) * 100, fullMark: 100 },
+        { subject: 'Energia', value: (metricas.energia / 5) * 100, fullMark: 100 },
+    ];
+    
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <button onClick={() => navigate(-1)} className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                    <ArrowLeft size={16} className="mr-2" />
+                    Voltar para Funcionários
+                </button>
+                 {canEdit && (
+                    <button className="flex items-center bg-fit-dark-blue text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors text-sm">
+                        <Edit size={14} className="mr-2" />
+                        Editar Perfil
+                    </button>
+                 )}
+            </div>
+
+            {user?.papel === 'Funcionário' && isOwnProfile && (
+                 <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-300 p-4 rounded-md" role="alert">
+                    <div className="flex items-center">
+                        <ShieldAlert size={20} className="mr-3" />
+                        <div>
+                            <p className="font-bold">Modo de Consulta</p>
+                            <p className="text-sm">Apenas equipes autorizadas podem alterar seus dados — esta área é apenas para consulta.</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                <img src={avatarUrl} alt={nome} className="w-24 h-24 rounded-full border-4 border-white dark:border-gray-700" />
+                <div className="flex-1 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start space-x-3">
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{nome}</h2>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRiscoClass(risco)}`}>{risco}</span>
+                    </div>
+                    <p className="text-fit-gray mt-1">{cargo}</p>
+                    <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-4 gap-y-2 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center"><Briefcase size={14} className="mr-1.5" />{empresaNome}</span>
+                        <span className="flex items-center"><Mail size={14} className="mr-1.5" />{email}</span>
+                        <span className="flex items-center"><Calendar size={14} className="mr-1.5" />Admissão: {new Date(dataAdmissao).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <div className="lg:col-span-1">
+                    <Card title="FitScore Atual" value={fitScore} icon={<BarChart2 className="text-fit-dark-blue" />} className="h-full" />
+                 </div>
+                 <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <Card title="Sono (última noite)" value={`${metricas.sono}h`} icon={<Moon className="text-fit-dark-blue" />} change={metricas.sono < 6 ? 'Abaixo do ideal' : 'Bom'} changeType={metricas.sono < 6 ? "negative" : "positive"} />
+                    <Card title="Nível de Estresse" value={`${metricas.estresse}%`} icon={<TrendingDown className="text-fit-dark-blue" />} change={metricas.estresse > 60 ? 'Alto' : 'Controlado'} changeType={metricas.estresse > 60 ? "negative" : "positive"}/>
+                    <Card title="Nível de Energia" value={`${metricas.energia}/5`} icon={<Zap className="text-fit-dark-blue" />} change={metricas.energia < 3 ? 'Baixo' : 'Bom'} changeType={metricas.energia < 3 ? "negative" : "positive"}/>
+                    <Card title="Humor" value={`${metricas.humor}/5`} icon={<Smile className="text-fit-dark-blue" />} change={metricas.humor < 3 ? 'Baixo' : 'Bom'} changeType={metricas.humor < 3 ? "negative" : "positive"}/>
+                </div>
+            </div>
+
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Evolução do FitScore (Últimos 12 meses)</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={historicoFitScore} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                            <XAxis dataKey="date" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR', { month: 'short' })} tick={{ fill: '#8A94A6', fontSize: 12 }} />
+                            <YAxis domain={[0, 100]} tick={{ fill: '#8A94A6', fontSize: 12 }} />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="score" name="FitScore" stroke="#0A2342" strokeWidth={2} dot={{ r: 2 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Pilares de Bem-estar</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metricasData}>
+                            <PolarGrid />
+                            <PolarAngleAxis dataKey="subject" />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                            <Radar name={nome} dataKey="value" stroke="#0A2342" fill="#0A2342" fillOpacity={0.6} />
+                        </RadarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default FuncionarioDetalhe;

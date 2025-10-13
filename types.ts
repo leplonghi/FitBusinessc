@@ -16,6 +16,13 @@ export interface AuditLog {
   timestamp: string;
 }
 
+export interface PlanoExercicio {
+  nome: string;
+  meta: string;
+  progresso: number; // Percentage from 0 to 100
+  frequencia: string;
+}
+
 export interface Funcionario {
   id: string;
   nome: string;
@@ -35,6 +42,7 @@ export interface Funcionario {
     humor: number;
     energia: number;
   };
+  planoExercicio: PlanoExercicio;
 }
 
 export interface Endereco {

@@ -1,4 +1,4 @@
-import { Funcionario, Empresa, RiscoNivel, Setor, AuditLog, Papel } from '../types';
+import { Funcionario, Empresa, RiscoNivel, Setor, AuditLog, Papel, PlanoExercicio } from '../types';
 
 const NOMES = ['Ana Lima', 'Bruno Costa', 'Carlos Dias', 'Daniela Rocha', 'Eduardo Melo', 'Fernanda Alves', 'Gustavo Borges', 'Helena Faria', 'Igor Ramos', 'Juliana Nunes'];
 const SOBRENOMES = ['Silva', 'Pereira', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Almeida', 'Gomes', 'Martins'];
@@ -7,6 +7,15 @@ const CARGOS_INDUSTRIA = ['Operador de Máquinas', 'Engenheiro de Produção', '
 const CARGOS_LOGISTICA = ['Analista de Logística', 'Coordenador de Transporte', 'Gerente de Armazém'];
 const CARGOS_VAREJO = ['Gerente de Loja', 'Vendedor', 'Analista de Estoque'];
 const CARGOS_SAUDE = ['Enfermeiro(a)', 'Analista Clínico', 'Coordenador de Atendimento'];
+
+const PLANOS_EXERCICIO: PlanoExercicio[] = [
+    { nome: 'Caminhada Diária', meta: '10.000 passos por dia', frequencia: 'Diariamente', progresso: 0 },
+    { nome: 'Ginástica Laboral', meta: 'Participar de 3 sessões', frequencia: '3x por semana', progresso: 0 },
+    { nome: 'Corrida Leve', meta: 'Correr 5km no total', frequencia: '2x por semana', progresso: 0 },
+    { nome: 'Yoga e Meditação', meta: 'Acumular 60 minutos', frequencia: '4x por semana', progresso: 0 },
+    { nome: 'Desafio de Hidratação', meta: 'Beber 2L de água por dia', frequencia: 'Diariamente', progresso: 0 },
+];
+
 
 const EMPRESAS_BASE: Omit<Empresa, 'funcionariosAtivos' | 'mediaFitScore' | 'taxaEngajamento' | 'alertasRisco' | 'irsHistory'>[] = [
     { 
@@ -95,6 +104,11 @@ const generateFuncionarios = () => {
                 }
             });
 
+            const planoExercicio: PlanoExercicio = {
+                ...getRandomItem(PLANOS_EXERCICIO),
+                progresso: getRandomInt(0, 100),
+            };
+
             mockFuncionarios.push({
                 id: `f${funcionarioId++}`,
                 nome,
@@ -113,7 +127,8 @@ const generateFuncionarios = () => {
                     estresse: getRandomInt(10, 80),
                     humor: getRandomInt(1, 5),
                     energia: getRandomInt(1, 5),
-                }
+                },
+                planoExercicio,
             });
         }
     });

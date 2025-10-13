@@ -1,5 +1,7 @@
+--- START OF FILE pages/MeuPainel.tsx ---
+
 import React from 'react';
-import { Mail, Briefcase, Calendar, BarChart2, TrendingDown, Moon, Zap, Smile, ShieldAlert } from 'lucide-react';
+import { Mail, Briefcase, Calendar, BarChart2, TrendingDown, Moon, Zap, Smile, ShieldAlert, Target } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { getFuncionarioById } from '../lib/mockData';
 import Card from '../components/ui/Card';
@@ -33,7 +35,7 @@ const MeuPainel: React.FC = () => {
         />;
     }
 
-    const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas } = funcionario;
+    const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas, planoExercicio } = funcionario;
     
     const getRiscoClass = (riscoNivel: RiscoNivel) => {
         switch (riscoNivel) {
@@ -74,6 +76,23 @@ const MeuPainel: React.FC = () => {
                         <span className="flex items-center"><Briefcase size={14} className="mr-1.5" />{empresaNome}</span>
                         <span className="flex items-center"><Mail size={14} className="mr-1.5" />{email}</span>
                         <span className="flex items-center"><Calendar size={14} className="mr-1.5" />Admissão: {new Date(dataAdmissao).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center"><Target size={20} className="mr-3 text-fit-dark-blue"/> Seu Plano de Atividades</h3>
+                <div className="space-y-3">
+                    <p><strong>Plano Atual:</strong> {planoExercicio.nome} ({planoExercicio.frequencia})</p>
+                    <p><strong>Sua Meta:</strong> {planoExercicio.meta}</p>
+                    <div>
+                        <div className="flex justify-between mb-1">
+                            <span className="text-base font-medium text-fit-dark-blue dark:text-white">Progresso</span>
+                            <span className="text-sm font-medium text-fit-dark-blue dark:text-white">{planoExercicio.progresso}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
+                            <div className="bg-fit-green h-4 rounded-full" style={{width: `${planoExercicio.progresso}%`}}></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -119,4 +138,4 @@ const MeuPainel: React.FC = () => {
     );
 };
 
-export default MeuPainel;
+export default MeuPainel;--- END OF FILE pages/MeuPainel.tsx ---

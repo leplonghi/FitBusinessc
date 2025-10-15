@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { NAV_LINKS } from '../../constants';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth.tsx';
 
 const BottomNav: React.FC = () => {
   const { user } = useAuth();

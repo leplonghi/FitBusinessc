@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Search, History, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, History, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { generateMockAuditLogs } from '../lib/mockData';
 import { AuditLog, Papel } from '../types';
 import AccessDenied from '../components/ui/AccessDenied';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 
 type SortableKeys = 'user' | 'action' | 'target' | 'timestamp';
 
@@ -12,6 +12,8 @@ const RegistroAtividades: React.FC = () => {
   const allLogs = useMemo(() => generateMockAuditLogs(), []);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'asc' | 'desc' } | null>({ key: 'timestamp', direction: 'desc' });
 
   const filteredAndSortedLogs = useMemo(() => {
@@ -24,6 +26,18 @@ const RegistroAtividades: React.FC = () => {
         log.action.toLowerCase().includes(lowercasedTerm) ||
         log.target.name.toLowerCase().includes(lowercasedTerm)
       );
+    }
+    
+    if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0); // Start of the day
+        filtered = filtered.filter(log => new Date(log.timestamp) >= start);
+    }
+
+    if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // End of the day
+        filtered = filtered.filter(log => new Date(log.timestamp) <= end);
     }
 
     if (sortConfig !== null) {
@@ -51,11 +65,17 @@ const RegistroAtividades: React.FC = () => {
     }
 
     return filtered;
-  }, [allLogs, searchTerm, sortConfig]);
+  }, [allLogs, searchTerm, sortConfig, startDate, endDate]);
 
   if (user?.papel !== 'superadmin') {
       return <AccessDenied />;
   }
+  
+  const clearFilters = () => {
+      setSearchTerm('');
+      setStartDate('');
+      setEndDate('');
+  };
 
   const requestSort = (key: SortableKeys) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -89,17 +109,43 @@ const RegistroAtividades: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-             <div className="flex justify-end mb-4">
-                <div className="w-full md:w-1/2 lg:w-1/3 relative">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="lg:col-span-2 relative">
                     <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input 
                         type="text"
                         placeholder="Buscar por usuário, ação ou alvo..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
                     />
                 </div>
+                <div>
+                    <label htmlFor="startDate" className="sr-only">Data de Início</label>
+                    <input 
+                        type="date"
+                        id="startDate"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                    />
+                </div>
+                 <div>
+                    <label htmlFor="endDate" className="sr-only">Data Final</label>
+                    <input 
+                        type="date"
+                        id="endDate"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                    />
+                </div>
+            </div>
+            <div className="flex justify-end mb-4">
+                <button 
+                    onClick={clearFilters}
+                    className="flex items-center text-sm text-fit-gray hover:text-fit-dark-blue dark:hover:text-white transition-colors"
+                >
+                    <X size={14} className="mr-1" />
+                    Limpar Filtros
+                </button>
             </div>
 
             <div className="overflow-x-auto">

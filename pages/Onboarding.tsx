@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, Users, Activity, CheckCircle, ArrowLeft, ArrowRight, Upload, X } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 import AccessDenied from '../components/ui/AccessDenied';
 import { Empresa, Funcionario, RiscoNivel, Setor } from '../types';
+import BulkImportModal from '../components/ui/BulkImportModal';
 
 // MASKING UTILITIES
 const formatCNPJ = (value: string) => value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1/$2').replace(/(\d{4})(\d)/, '$1-$2').slice(0, 18);
@@ -78,14 +79,14 @@ const Step1Empresa: React.FC<{ onNext: (data: Partial<Empresa>) => void }> = ({ 
     
     return (
         <div className="space-y-4">
-            <input name="nomeEmpresa" onChange={handleChange} placeholder="Nome da Empresa" required className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"/>
-            <input name="cnpj" value={formData.cnpj} onChange={handleChange} placeholder="CNPJ" required className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"/>
+            <input name="nomeEmpresa" onChange={handleChange} placeholder="Nome da Empresa" required />
+            <input name="cnpj" value={formData.cnpj} onChange={handleChange} placeholder="CNPJ" required />
             <h4 className="font-semibold pt-2 border-t dark:border-gray-600">Endereço</h4>
-            <input name="endereco.rua" onChange={handleChange} placeholder="Rua e Número" className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"/>
+            <input name="endereco.rua" onChange={handleChange} placeholder="Rua e Número" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input name="endereco.bairro" onChange={handleChange} placeholder="Bairro" className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"/>
-                <input name="endereco.cidade" onChange={handleChange} placeholder="Cidade e Estado" className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"/>
-                <input name="endereco.cep" value={formData.endereco?.cep} onChange={handleChange} placeholder="CEP" className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"/>
+                <input name="endereco.bairro" onChange={handleChange} placeholder="Bairro" />
+                <input name="endereco.cidade" onChange={handleChange} placeholder="Cidade e Estado" />
+                <input name="endereco.cep" value={formData.endereco?.cep} onChange={handleChange} placeholder="CEP" />
             </div>
             <div className="flex justify-end pt-6">
                 <button onClick={() => onNext(formData)} className="bg-fit-dark-blue text-white px-6 py-2 rounded-lg flex items-center hover:bg-opacity-90 transition-colors">
@@ -99,6 +100,7 @@ const Step1Empresa: React.FC<{ onNext: (data: Partial<Empresa>) => void }> = ({ 
 // Step 2: Employee Registration
 const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => void; onBack: () => void; }> = ({ onNext, onBack }) => {
     const [employees, setEmployees] = useState<Partial<Funcionario>[]>([{ nome: '', email: '', cargo: '' }]);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const addRow = () => setEmployees([...employees, { nome: '', email: '', cargo: '' }]);
     const removeRow = (index: number) => setEmployees(employees.filter((_, i) => i !== index));
@@ -108,21 +110,31 @@ const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => vo
         updated[index] = { ...updated[index], [field]: value };
         setEmployees(updated);
     };
+    
+    const handleImportComplete = (importedFuncionarios: Partial<Funcionario>[]) => {
+        // Replace manually added rows with imported data for simplicity
+        setEmployees(importedFuncionarios);
+        setIsImportModalOpen(false);
+    };
 
     return (
+        <>
         <div className="space-y-6">
             <div className="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <p>Importe um arquivo CSV/XLSX ou adicione os funcionários manualmente abaixo.</p>
-                <button className="mt-2 bg-white dark:bg-gray-800 text-fit-dark-blue px-4 py-2 rounded-lg border dark:border-gray-600 flex items-center mx-auto hover:bg-gray-50 dark:hover:bg-gray-600">
-                    <Upload size={16} className="mr-2"/> Importar Arquivo (em breve)
+                <p>Importe um arquivo CSV ou adicione os funcionários manualmente abaixo.</p>
+                <button 
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="mt-2 bg-white dark:bg-gray-800 text-fit-dark-blue px-4 py-2 rounded-lg border dark:border-gray-600 flex items-center mx-auto hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                    <Upload size={16} className="mr-2"/> Importar via CSV
                 </button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                 {employees.map((emp, index) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
-                        <input value={emp.nome} onChange={e => handleInputChange(index, 'nome', e.target.value)} placeholder="Nome do Funcionário" className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue md:col-span-1"/>
-                        <input value={emp.email} onChange={e => handleInputChange(index, 'email', e.target.value)} placeholder="Email" className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue md:col-span-1"/>
-                        <input value={emp.cargo} onChange={e => handleInputChange(index, 'cargo', e.target.value)} placeholder="Cargo" className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue md:col-span-1"/>
+                        <input value={emp.nome} onChange={e => handleInputChange(index, 'nome', e.target.value)} placeholder="Nome do Funcionário" />
+                        <input value={emp.email} onChange={e => handleInputChange(index, 'email', e.target.value)} placeholder="Email" />
+                        <input value={emp.cargo} onChange={e => handleInputChange(index, 'cargo', e.target.value)} placeholder="Cargo" />
                         <button onClick={() => removeRow(index)} className="text-red-500 justify-self-end hover:text-red-700 transition-colors"><X size={18}/></button>
                     </div>
                 ))}
@@ -137,6 +149,12 @@ const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => vo
                 </button>
             </div>
         </div>
+        <BulkImportModal 
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
+            onComplete={handleImportComplete}
+        />
+        </>
     );
 };
 
@@ -146,9 +164,9 @@ const Step3Configuracao: React.FC<{ onComplete: (data: any) => void; onBack: () 
         <div className="space-y-6 text-center">
             <p className="text-fit-gray">Selecione os programas e configure os parâmetros iniciais de monitoramento.</p>
             <div className="space-y-2 text-left max-w-sm mx-auto">
-                 <label className="flex items-center"><input type="checkbox" className="mr-2 h-4 w-4 rounded border-gray-300 text-fit-dark-blue focus:ring-fit-dark-blue"/> Ginástica Laboral</label>
-                 <label className="flex items-center"><input type="checkbox" className="mr-2 h-4 w-4 rounded border-gray-300 text-fit-dark-blue focus:ring-fit-dark-blue"/> Desafio de Passos</label>
-                 <label className="flex items-center"><input type="checkbox" className="mr-2 h-4 w-4 rounded border-gray-300 text-fit-dark-blue focus:ring-fit-dark-blue"/> Trilhas de Treinamento Físico</label>
+                 <label className="flex items-center"><input type="checkbox"/> Ginástica Laboral</label>
+                 <label className="flex items-center"><input type="checkbox"/> Desafio de Passos</label>
+                 <label className="flex items-center"><input type="checkbox"/> Trilhas de Treinamento Físico</label>
             </div>
              <div className="flex justify-between pt-6">
                 <button onClick={onBack} className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg flex items-center hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors">
@@ -183,7 +201,7 @@ const Onboarding: React.FC<{
     };
     
     const handleNextStep2 = (data: Partial<Funcionario>[]) => {
-        setEmployeesData(data);
+        setEmployeesData(data.filter(emp => emp.nome && emp.email)); // Filter out empty rows
         setCurrentStep(3);
     };
 
@@ -212,6 +230,7 @@ const Onboarding: React.FC<{
             dataAdmissao: new Date().toISOString().split('T')[0],
             historicoFitScore: [],
             metricas: { sono: 8, estresse: 30, humor: 5, energia: 4 },
+            planoExercicio: { nome: 'Caminhada Diária', meta: '10.000 passos/dia', frequencia: 'Diária', progresso: 0 },
             setor: newCompany.setor,
         } as Funcionario));
         
@@ -219,7 +238,7 @@ const Onboarding: React.FC<{
         setFuncionarios(prev => [...newFuncionarios, ...prev]);
 
         alert("Onboarding Concluído! Nova empresa adicionada.");
-        navigate('/empresas');
+        navigate('/gestao/empresas');
     };
 
     const renderStep = () => {

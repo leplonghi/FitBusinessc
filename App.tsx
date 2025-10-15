@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme';
-import { AuthProvider, useAuth } from './hooks/useAuth';
+import { AuthProvider, useAuth } from './hooks/useAuth.tsx';
 import Layout from './components/layout/Layout';
 
 import VisaoGeral from './pages/VisaoGeral';
@@ -11,11 +11,13 @@ import CentralAlertas from './pages/CentralAlertas';
 import RegistroAtividades from './pages/RegistroAtividades';
 import Integracoes from './pages/Integracoes';
 import PainelAnalitico from './pages/PainelAnalitico';
+import GestaoEmpresas from './pages/GestaoEmpresas';
 import Perfil from './pages/Perfil';
 import Onboarding from './pages/Onboarding';
 import Login from './pages/Login'; // Import the new Login page
 import { Empresa, Funcionario } from './types';
 import { generateMockEmpresas, generateMockFuncionarios } from './lib/mockData';
+import FuncionarioDetalhe from './pages/FuncionarioDetalhe';
 
 /**
  * Handles the initial redirection after a user logs in.
@@ -78,11 +80,13 @@ const AuthenticatedApp: React.FC = () => {
       <Layout>
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
-          <Route path="/meu-painel" element={<MeuPainel />} />
+          <Route path="/meu-painel" element={<MeuPainel allFuncionarios={funcionarios} setAllFuncionarios={setFuncionarios} />} />
           <Route path="/empresas" element={<EmpresasMonitoradas allEmpresas={empresas} setAllEmpresas={setEmpresas} allFuncionarios={funcionarios} setAllFuncionarios={setFuncionarios} />} />
+          <Route path="/funcionarios/:id" element={<FuncionarioDetalhe allFuncionarios={funcionarios} setAllFuncionarios={setFuncionarios} />} />
           <Route path="/alertas" element={<CentralAlertas />} />
           <Route path="/painel-analitico" element={<PainelAnalitico />} />
           <Route path="/auditoria" element={<RegistroAtividades />} />
+          <Route path="/gestao/empresas" element={<GestaoEmpresas allEmpresas={empresas} setAllEmpresas={setEmpresas} allFuncionarios={funcionarios} setAllFuncionarios={setFuncionarios} />} />
           <Route path="/integracoes" element={<Integracoes />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/onboarding" element={<Onboarding setEmpresas={setEmpresas} setFuncionarios={setFuncionarios} />} />

@@ -26,7 +26,7 @@ const firebaseConfig = {
 };
 
 // This flag allows the app to detect if Firebase is properly configured.
-// In a real app, you would check environment variables. Here, we check the placeholders.
+// It checks if the placeholder values are still present.
 export const isFirebaseConfigured = 
   firebaseConfig.apiKey !== "YOUR_API_KEY" && 
   firebaseConfig.authDomain !== "YOUR_AUTH_DOMAIN";
@@ -37,64 +37,73 @@ if (!isFirebaseConfigured) {
         `
         *********************************************************************
         ** ATENÇÃO: As credenciais do Firebase não estão configuradas.      **
-        ** A autenticação não funcionará. Por favor, edite o arquivo       **
-        ** 'services/authService.ts' com suas credenciais reais.            **
+        ** O app usará um usuário 'superadmin' mock para desenvolvimento.    **
+        ** Edite 'services/authService.ts' com suas credenciais para      **
+        ** testar a autenticação real.                                     **
         *********************************************************************
         `
     );
 }
 
-// Initialize Firebase
+// Initialize Firebase only if it's configured.
 const app: FirebaseApp = initializeApp(firebaseConfig);
 export const auth: Auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence);
+
+
+// --- MOCK USER DEFINITIONS ---
+// This map centralizes the definitions for special mock users, making it cleaner
+// than a series of 'if' statements. It's used for mapping specific Firebase accounts
+// to predefined roles in this demo environment.
+const specialUserMap: { [email: string]: Partial<User> } = {
+  'admin@fitbusiness.com': {
+    papel: 'superadmin',
+    nome: 'Admin FitBusiness',
+  },
+  'maria.silva@inova.tech': {
+    papel: 'Gerente RH',
+    nome: 'Maria Silva',
+    empresaId: 'e1',
+  },
+  'bruno.costa@inova.tech': {
+    id: 'f2', // Matching an ID from mockData for MeuPainel
+    papel: 'Funcionário',
+    nome: 'Bruno Costa',
+    empresaId: 'e1'
+  }
+};
 
 
 // --- USER MAPPING ---
 
 /**
  * Maps a Firebase User object to our application's internal User type.
- * This is where you would implement your role-based access control logic.
- * 
  * !!! SECURITY NOTE !!!
  * In a production environment, user roles should be managed securely on the backend
- * or using Firebase Custom Claims, not determined on the client-side based on email.
+ * or using Firebase Custom Claims, not determined on the client-side.
  * This implementation is for demonstration purposes only.
  */
 export const mapFirebaseUserToAppUser = (firebaseUser: FirebaseUser): User => {
-  const email = firebaseUser.email || '';
-  
-  // Demo logic for assigning roles based on email
-  if (email.toLowerCase() === 'admin@fitbusiness.com') {
+  const email = firebaseUser.email?.toLowerCase() || '';
+  const specialUser = specialUserMap[email];
+
+  if (specialUser) {
     return {
-      id: firebaseUser.uid,
-      nome: firebaseUser.displayName || 'Admin FitBusiness',
-      email: email,
-      papel: 'superadmin',
+      id: specialUser.id || firebaseUser.uid,
+      email: firebaseUser.email || '',
       avatarUrl: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-    };
+      ...specialUser,
+    } as User;
   }
 
-  // A mapping for a client RH manager
-  if (email.toLowerCase().includes('maria.silva')) {
-     return {
-      id: firebaseUser.uid,
-      nome: firebaseUser.displayName || 'Maria Silva',
-      email: email,
-      papel: 'Gerente RH',
-      avatarUrl: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-      empresaId: 'e1' // Hardcoded for demo
-    };
-  }
-
-  // Default to 'Funcionário' role
+  // Default to 'Funcionário' role for any other authenticated user
   return {
     id: firebaseUser.uid,
-    nome: firebaseUser.displayName || 'Usuário',
-    email: email,
+    nome: firebaseUser.displayName || 'Usuário Padrão',
+    email: firebaseUser.email || '',
     papel: 'Funcionário',
     avatarUrl: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-    empresaId: 'e1' // Hardcoded for demo
+    empresaId: 'e2', // Default company for generic users
   };
 };
 

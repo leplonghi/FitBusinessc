@@ -79,7 +79,6 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder="Digite sua mensagem aqui..."
                 rows={5}
-                className="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
                 required
               />
               <div className="mt-6 flex justify-end space-x-3">

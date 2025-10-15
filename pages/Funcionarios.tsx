@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { generateMockFuncionarios, generateMockEmpresas } from '../lib/mockData';
 import { Funcionario, RiscoNivel, Setor } from '../types';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 
 const Funcionarios: React.FC = () => {
   const navigate = useNavigate();
@@ -64,13 +64,12 @@ const Funcionarios: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="relative md:col-span-2 lg:col-span-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input 
             type="text"
             placeholder="Buscar por nome, cargo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
           />
         </div>
 
@@ -79,7 +78,6 @@ const Funcionarios: React.FC = () => {
             <select
               value={selectedCompany}
               onChange={(e) => setSelectedCompany(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
             >
               <option value="all">Todas as Empresas</option>
               {allEmpresas.map(emp => <option key={emp.empresaId} value={emp.empresaId}>{emp.nomeEmpresa}</option>)}
@@ -91,7 +89,6 @@ const Funcionarios: React.FC = () => {
           <select
             value={selectedSetor}
             onChange={(e) => setSelectedSetor(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
           >
             <option value="all">Todos os Setores</option>
             {allSetores.map(setor => <option key={setor} value={setor}>{setor}</option>)}
@@ -102,7 +99,6 @@ const Funcionarios: React.FC = () => {
           <select
             value={selectedRisco}
             onChange={(e) => setSelectedRisco(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue"
           >
             <option value="all">Todos os Riscos</option>
             <option value="Baixo">Baixo</option>

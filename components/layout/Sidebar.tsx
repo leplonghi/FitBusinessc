@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { NAV_LINKS } from '../../constants';
 import { Settings, LifeBuoy, MessageSquarePlus, ActivitySquare } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth.tsx';
 import FeedbackModal from '../ui/FeedbackModal';
 
 const Sidebar: React.FC = () => {

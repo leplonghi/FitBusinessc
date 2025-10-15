@@ -1,19 +1,71 @@
-import React from 'react';
-import { Mail, Briefcase, Calendar, BarChart2, TrendingDown, Moon, Zap, Smile, ShieldAlert, Target } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Briefcase, Calendar, BarChart2, TrendingDown, Moon, Zap, Smile, ShieldAlert, Target, Flag, Plus, Edit, Trash2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { getFuncionarioById } from '../lib/mockData';
 import Card from '../components/ui/Card';
 import Spinner from '../components/ui/Spinner';
-import { RiscoNivel } from '../types';
-import { useAuth } from '../hooks/useAuth';
+import { RiscoNivel, MetaStatus, Funcionario, Meta } from '../types';
+import { useAuth } from '../hooks/useAuth.tsx';
+import { useTheme } from '../hooks/useTheme';
 import AccessDenied from '../components/ui/AccessDenied';
+import MetaModal from '../components/modals/MetaModal';
 
-const MeuPainel: React.FC = () => {
+const GoalStatusBadge: React.FC<{ status: MetaStatus }> = ({ status }) => {
+  const statusClasses = {
+    'Não Iniciada': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    'Em Progresso': 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+    'Concluída': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+  };
+  return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClasses[status]}`}>{status}</span>;
+};
+
+interface MeuPainelProps {
+    allFuncionarios: Funcionario[];
+    setAllFuncionarios: React.Dispatch<React.SetStateAction<Funcionario[]>>;
+}
+
+const MeuPainel: React.FC<MeuPainelProps> = ({ allFuncionarios, setAllFuncionarios }) => {
     const { user } = useAuth();
+    const { theme } = useTheme();
+    const tickColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
+    const tooltipBackgroundColor = theme === 'dark' ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+    const tooltipBorderColor = theme === 'dark' ? '#374151' : '#E5E7EB';
     
-    // In a real app, you'd fetch the employee data based on the logged-in user's ID.
-    // Here, we simulate it by finding the employee with a matching ID from mock data.
-    const funcionario = user ? getFuncionarioById(user.id) : undefined;
+    const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
+    const [metaToEdit, setMetaToEdit] = useState<Meta | null>(null);
+
+    const funcionario = user ? allFuncionarios.find(f => f.id === user.id) : undefined;
+
+    const handleOpenAddMetaModal = () => {
+        setMetaToEdit(null);
+        setIsMetaModalOpen(true);
+    };
+
+    const handleOpenEditMetaModal = (meta: Meta) => {
+        setMetaToEdit(meta);
+        setIsMetaModalOpen(true);
+    };
+
+    const handleSaveMeta = (metaData: Omit<Meta, 'id'>) => {
+        if (!funcionario) return;
+
+        const updatedMetas = metaToEdit
+            ? funcionario.metas.map(m => m.id === metaToEdit.id ? { ...m, ...metaData } : m)
+            : [...funcionario.metas, { ...metaData, id: `m-${Date.now()}` }];
+        
+        const updatedFuncionario = { ...funcionario, metas: updatedMetas };
+        
+        setAllFuncionarios(prev => prev.map(f => f.id === funcionario.id ? updatedFuncionario : f));
+        setIsMetaModalOpen(false);
+    };
+    
+    const handleDeleteMeta = (metaId: string) => {
+        if (!funcionario) return;
+        if (window.confirm("Tem certeza que deseja excluir esta meta?")) {
+            const updatedMetas = funcionario.metas.filter(m => m.id !== metaId);
+            const updatedFuncionario = { ...funcionario, metas: updatedMetas };
+            setAllFuncionarios(prev => prev.map(f => f.id === funcionario.id ? updatedFuncionario : f));
+        }
+    };
 
     if (!user) {
         return <div className="flex justify-center items-center h-full"><Spinner /></div>;
@@ -33,7 +85,7 @@ const MeuPainel: React.FC = () => {
         />;
     }
 
-    const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas, planoExercicio } = funcionario;
+    const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas, planoExercicio, metas } = funcionario;
     
     const getRiscoClass = (riscoNivel: RiscoNivel) => {
         switch (riscoNivel) {
@@ -51,6 +103,7 @@ const MeuPainel: React.FC = () => {
     ];
     
     return (
+        <>
         <div className="space-y-6">
              <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-300 p-4 rounded-md" role="alert">
                 <div className="flex items-center">
@@ -75,6 +128,44 @@ const MeuPainel: React.FC = () => {
                         <span className="flex items-center"><Mail size={14} className="mr-1.5" />{email}</span>
                         <span className="flex items-center"><Calendar size={14} className="mr-1.5" />Admissão: {new Date(dataAdmissao).toLocaleDateString('pt-BR')}</span>
                     </div>
+                </div>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+                        <Flag size={20} className="mr-3 text-fit-dark-blue" /> Metas Individuais
+                    </h3>
+                    <button onClick={handleOpenAddMetaModal} className="flex items-center bg-fit-dark-blue text-white px-3 py-1.5 rounded-lg hover:bg-opacity-90 transition-colors text-sm">
+                        <Plus size={14} className="mr-2" /> Adicionar Meta
+                    </button>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-300">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Descrição da Meta</th>
+                                <th scope="col" className="px-6 py-3">Data Alvo</th>
+                                <th scope="col" className="px-6 py-3">Status</th>
+                                <th scope="col" className="px-6 py-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {metas.map(meta => (
+                                <tr key={meta.id} className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{meta.descricao}</td>
+                                    <td className="px-6 py-4">{new Date(meta.dataAlvo).toLocaleDateString('pt-BR')}</td>
+                                    <td className="px-6 py-4"><GoalStatusBadge status={meta.status} /></td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end space-x-4">
+                                            <button onClick={() => handleOpenEditMetaModal(meta)} className="text-fit-gray hover:text-fit-dark-blue"><Edit size={16} /></button>
+                                            <button onClick={() => handleDeleteMeta(meta.id)} className="text-fit-gray hover:text-fit-red"><Trash2 size={16} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -113,9 +204,9 @@ const MeuPainel: React.FC = () => {
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={historicoFitScore} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                            <XAxis dataKey="date" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR', { month: 'short' })} tick={{ fill: '#8A94A6', fontSize: 12 }} />
-                            <YAxis domain={[0, 100]} tick={{ fill: '#8A94A6', fontSize: 12 }} />
-                            <Tooltip />
+                            <XAxis dataKey="date" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR', { month: 'short' })} tick={{ fill: tickColor, fontSize: 12 }} />
+                            <YAxis domain={[0, 100]} tick={{ fill: tickColor, fontSize: 12 }} />
+                            <Tooltip contentStyle={{ backgroundColor: tooltipBackgroundColor, backdropFilter: 'blur(5px)', border: `1px solid ${tooltipBorderColor}`, borderRadius: '0.75rem' }} />
                             <Line type="monotone" dataKey="score" name="FitScore" stroke="#0A2342" strokeWidth={2} dot={{ r: 2 }} />
                         </LineChart>
                     </ResponsiveContainer>
@@ -125,7 +216,7 @@ const MeuPainel: React.FC = () => {
                     <ResponsiveContainer width="100%" height={300}>
                          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metricasData}>
                             <PolarGrid />
-                            <PolarAngleAxis dataKey="subject" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: tickColor }}/>
                             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                             <Radar name={nome} dataKey="value" stroke="#0A2342" fill="#0A2342" fillOpacity={0.6} />
                         </RadarChart>
@@ -133,6 +224,13 @@ const MeuPainel: React.FC = () => {
                 </div>
             </div>
         </div>
+        <MetaModal 
+            isOpen={isMetaModalOpen}
+            onClose={() => setIsMetaModalOpen(false)}
+            onSave={handleSaveMeta}
+            metaToEdit={metaToEdit}
+        />
+        </>
     );
 };
 

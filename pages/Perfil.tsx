@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Edit, Building, Mail, Shield } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 import { generateMockEmpresas } from '../lib/mockData';
 import Card from '../components/ui/Card';
 import AccessDenied from '../components/ui/AccessDenied';

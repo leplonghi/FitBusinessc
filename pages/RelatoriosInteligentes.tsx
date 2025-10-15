@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SlidersHorizontal, FileDown } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
@@ -16,32 +15,32 @@ const RelatoriosInteligentes: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Empresa</label>
-            <select id="empresa" className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue sm:text-sm rounded-md">
+            <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+            <select id="empresa">
               <option>Todas</option>
               <option>InovaTech Soluções</option>
               <option>Manufatura Forte</option>
             </select>
           </div>
           <div>
-            <label htmlFor="periodo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Período</label>
-            <select id="periodo" className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue sm:text-sm rounded-md">
+            <label htmlFor="periodo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Período</label>
+            <select id="periodo">
               <option>Últimos 30 dias</option>
               <option>Últimos 3 meses</option>
               <option>Último ano</option>
             </select>
           </div>
            <div>
-            <label htmlFor="setor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Setor</label>
-            <select id="setor" className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue sm:text-sm rounded-md">
+            <label htmlFor="setor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Setor</label>
+            <select id="setor">
               <option>Todos</option>
               <option>Tecnologia</option>
               <option>Indústria</option>
             </select>
           </div>
           <div>
-            <label htmlFor="indicador" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Indicador</label>
-            <select id="indicador" className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-fit-dark-blue focus:border-fit-dark-blue sm:text-sm rounded-md">
+            <label htmlFor="indicador" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Indicador</label>
+            <select id="indicador">
               <option>Todos</option>
               <option>Sono</option>
               <option>Humor</option>

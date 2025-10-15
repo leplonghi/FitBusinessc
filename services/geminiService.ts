@@ -1,14 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Fix: Per guidelines, the API key must be from process.env.API_KEY.
-const apiKey = process.env.API_KEY;
+// Added a check for 'process' to prevent a ReferenceError in browser environments.
+const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
 
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
   ai = new GoogleGenAI({ apiKey });
 } else {
   console.warn(
-    "API_KEY environment variable is not set. Gemini API will not be used. Falling back to mock data."
+    "API_KEY environment variable is not set or accessible. Gemini API will not be used. Falling back to mock data."
   );
 }
 
@@ -40,12 +40,10 @@ export const geminiService = {
 
     try {
       console.log(`Generating insight for: ${promptKey}`);
-      // Fix: As per guidelines, use ai.models.generateContent
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
       });
-      // Fix: As per guidelines, access text directly
       return response.text;
     } catch (error) {
       console.error("Error generating insight from Gemini API:", error);

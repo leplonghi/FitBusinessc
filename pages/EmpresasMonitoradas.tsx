@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
-    ArrowLeft, Building, Users, Search, X, Edit, Mail, Briefcase, Calendar, ShieldAlert, Target, BarChart2
+    ArrowLeft, Building, Users, Search, X, Mail, Briefcase, Calendar, ShieldAlert, Target, BarChart2
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, Radar, PieChart, Pie, Cell, Bar, BarChart as RechartsBarChart } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Bar, BarChart as RechartsBarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { Empresa, Funcionario, RiscoNivel, Setor } from '../types';
-import { useAuth } from '../hooks/useAuth';
-import Card from '../components/ui/Card';
+import { useAuth } from '../hooks/useAuth.tsx';
+import { useTheme } from '../hooks/useTheme';
 import Spinner from '../components/ui/Spinner';
+import FuncionarioDetalheModal from '../components/modals/FuncionarioDetalheModal';
 
 // --- HELPER FUNCTIONS & STYLES ---
 
@@ -20,127 +21,6 @@ const getRiscoClass = (risco: RiscoNivel) => {
 
 const PIE_COLORS = ['#E53E3E', '#F6AD55', '#48BB78']; // Alto, Médio, Baixo
 
-// --- MODAL: DETALHES DO FUNCIONÁRIO ---
-
-const FuncionarioDetalheModal: React.FC<{
-    funcionario: Funcionario | null;
-    onClose: () => void;
-}> = ({ funcionario, onClose }) => {
-    const { user } = useAuth();
-    
-    if (!funcionario) return null;
-
-    const canEdit = user?.papel === 'superadmin';
-
-    const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas, planoExercicio } = funcionario;
-
-    const metricasData = [
-        { subject: 'Sono', value: (metricas.sono / 8) * 100 },
-        { subject: 'Estresse', value: 100 - metricas.estresse },
-        { subject: 'Humor', value: (metricas.humor / 5) * 100 },
-        { subject: 'Energia', value: (metricas.energia / 5) * 100 },
-    ];
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
-            <div 
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" 
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b dark:border-gray-700 flex-shrink-0">
-                    <div className="flex items-center space-x-4">
-                        <img src={avatarUrl} alt={nome} className="w-12 h-12 rounded-full" />
-                        <div>
-                             <h3 className="text-xl font-bold text-gray-800 dark:text-white">{nome}</h3>
-                             <p className="text-sm text-fit-gray">{cargo}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        {canEdit && (
-                            <button className="flex items-center bg-fit-dark-blue text-white px-3 py-1.5 rounded-lg text-sm">
-                                <Edit size={14} className="mr-2"/> Editar
-                            </button>
-                        )}
-                        <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
-                            <X size={24} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Body */}
-                <div className="p-6 space-y-6 overflow-y-auto">
-                    {/* Personal Info & Metrics */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-1 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg space-y-3">
-                             <h4 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 mb-2">Informações</h4>
-                             <p className="flex items-center text-sm"><Briefcase size={14} className="mr-2 text-fit-gray"/> <strong>Empresa:</strong><span className="ml-2">{empresaNome}</span></p>
-                             <p className="flex items-center text-sm"><Mail size={14} className="mr-2 text-fit-gray"/> <strong>Email:</strong><span className="ml-2">{email}</span></p>
-                             <p className="flex items-center text-sm"><Calendar size={14} className="mr-2 text-fit-gray"/> <strong>Admissão:</strong><span className="ml-2">{new Date(dataAdmissao).toLocaleDateString('pt-BR')}</span></p>
-                        </div>
-                         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-                            <Card title="FitScore Atual" value={fitScore} icon={<BarChart2 size={20} className="text-fit-dark-blue"/>} />
-                            <Card title="Nível de Risco" value={risco} icon={<ShieldAlert size={20} className="text-fit-dark-blue"/>} />
-                        </div>
-                    </div>
-
-                    {/* Exercise Plan */}
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
-                        <h4 className="font-semibold text-gray-800 dark:text-white mb-3 flex items-center"><Target size={18} className="mr-2 text-fit-dark-blue"/> Plano de Atividades</h4>
-                        <div className="space-y-2">
-                             <p className="text-sm"><strong>Plano:</strong> {planoExercicio.nome} ({planoExercicio.frequencia})</p>
-                             <p className="text-sm"><strong>Meta Semanal:</strong> {planoExercicio.meta}</p>
-                             <div>
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span>Progresso</span>
-                                    <span>{planoExercicio.progresso}%</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                                    <div className="bg-fit-green h-2.5 rounded-full" style={{ width: `${planoExercicio.progresso}%` }}></div>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                    
-                    {/* Charts */}
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                        <div className="lg:col-span-3 bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
-                             <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-semibold text-gray-800 dark:text-white">Evolução do FitScore</h4>
-                                <select className="text-xs border-gray-300 rounded-md dark:bg-gray-700">
-                                    <option>Últimos 12 meses</option>
-                                    <option>Últimos 6 meses</option>
-                                </select>
-                             </div>
-                            <ResponsiveContainer width="100%" height={250}>
-                                <LineChart data={historicoFitScore}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
-                                    <XAxis dataKey="date" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR', { month: 'short' })} tick={{ fontSize: 10 }} />
-                                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }}/>
-                                    <Tooltip />
-                                    <Line type="monotone" dataKey="score" name="FitScore" stroke="#0A2342" strokeWidth={2} dot={false} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
-                            <h4 className="font-semibold text-gray-800 dark:text-white mb-4">Pilares de Bem-estar</h4>
-                            <ResponsiveContainer width="100%" height={250}>
-                                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metricasData}>
-                                    <PolarGrid />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
-                                    <Radar name={nome} dataKey="value" stroke="#0A2342" fill="#0A2342" fillOpacity={0.6} />
-                                </RadarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
 // --- VIEW: DETALHES DA EMPRESA ---
 
 const EmpresaDetalheView: React.FC<{
@@ -148,7 +28,12 @@ const EmpresaDetalheView: React.FC<{
     funcionarios: Funcionario[];
     onBack: () => void;
     showBackButton: boolean;
-}> = ({ empresa, funcionarios, onBack, showBackButton }) => {
+    setAllFuncionarios: React.Dispatch<React.SetStateAction<Funcionario[]>>;
+}> = ({ empresa, funcionarios, onBack, showBackButton, setAllFuncionarios }) => {
+    const { theme } = useTheme();
+    const tickColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
+    const tooltipBackgroundColor = theme === 'dark' ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+    const tooltipBorderColor = theme === 'dark' ? '#374151' : '#E5E7EB';
     
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFuncionario, setSelectedFuncionario] = useState<Funcionario | null>(null);
@@ -193,6 +78,11 @@ const EmpresaDetalheView: React.FC<{
         });
         return Object.entries(sectors).map(([name, data]) => ({ name, engajamento: Math.round(data.total / data.count) }));
     }, [filteredFuncionarios]);
+    
+    const currentSelectedFuncionarioData = useMemo(() => {
+        if (!selectedFuncionario) return null;
+        return funcionarios.find(f => f.id === selectedFuncionario.id) || null;
+    }, [selectedFuncionario, funcionarios]);
 
     return (
         <>
@@ -225,7 +115,7 @@ const EmpresaDetalheView: React.FC<{
                                 <Pie data={fitScoreDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={3}>
                                     {fitScoreDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index]} />)}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(5px)', border: '1px solid #E2E8F0', borderRadius: '0.75rem' }} />
+                                <Tooltip contentStyle={{ backgroundColor: tooltipBackgroundColor, backdropFilter: 'blur(5px)', border: `1px solid ${tooltipBorderColor}`, borderRadius: '0.75rem' }} />
                             </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -249,9 +139,9 @@ const EmpresaDetalheView: React.FC<{
                     <ResponsiveContainer width="100%" height={240}>
                        <RechartsBarChart data={engagementBySector} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                            <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
-                           <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: '#8A94A6' }} />
-                           <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10, fill: '#8A94A6' }} />
-                           <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(5px)', border: '1px solid #E2E8F0', borderRadius: '0.75rem' }} cursor={{ fill: 'rgba(242, 244, 248, 0.5)' }}/>
+                           <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: tickColor }} />
+                           <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10, fill: tickColor }} />
+                           <Tooltip contentStyle={{ backgroundColor: tooltipBackgroundColor, backdropFilter: 'blur(5px)', border: `1px solid ${tooltipBorderColor}`, borderRadius: '0.75rem' }} cursor={{ fill: 'rgba(242, 244, 248, 0.5)' }}/>
                            <Bar dataKey="engajamento" name="Engajamento" fill="#0A2342" />
                        </RechartsBarChart>
                     </ResponsiveContainer>
@@ -286,7 +176,11 @@ const EmpresaDetalheView: React.FC<{
                 </div>
             </div>
         </div>
-        <FuncionarioDetalheModal funcionario={selectedFuncionario} onClose={() => setSelectedFuncionario(null)} />
+        <FuncionarioDetalheModal 
+            funcionario={currentSelectedFuncionarioData} 
+            onClose={() => setSelectedFuncionario(null)} 
+            setAllFuncionarios={setAllFuncionarios}
+        />
         </>
     );
 };
@@ -335,7 +229,7 @@ interface EmpresasMonitoradasProps {
     setAllFuncionarios: React.Dispatch<React.SetStateAction<Funcionario[]>>;
 }
 
-export const EmpresasMonitoradas: React.FC<EmpresasMonitoradasProps> = ({ allEmpresas, allFuncionarios }) => {
+export const EmpresasMonitoradas: React.FC<EmpresasMonitoradasProps> = ({ allEmpresas, allFuncionarios, setAllFuncionarios }) => {
     const { user } = useAuth();
     const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
 
@@ -360,6 +254,7 @@ export const EmpresasMonitoradas: React.FC<EmpresasMonitoradasProps> = ({ allEmp
                 funcionarios={empresaFuncionarios}
                 onBack={() => setSelectedEmpresa(null)}
                 showBackButton={user?.papel === 'superadmin'}
+                setAllFuncionarios={setAllFuncionarios}
             />
         );
     }

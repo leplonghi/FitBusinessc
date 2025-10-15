@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { Sun, Moon, LogOut, User, ActivitySquare } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth.tsx';
 import { NAV_LINKS } from '../../constants';
 
 const Header: React.FC = () => {

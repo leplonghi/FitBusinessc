@@ -2,14 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, Trash2, X, Search, ArrowDown, ArrowUp } from 'lucide-react';
 import { generateMockFuncionarios, generateMockEmpresas } from '../lib/mockData';
 import { Funcionario, Empresa, RiscoNivel, Setor } from '../types';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 import AccessDenied from '../components/ui/AccessDenied';
 
 // Modal Component to Add/Edit a Funcionario
 const FuncionarioModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-  // Fix: The 'onSave' prop should not omit 'planoExercicio', as it's being passed in the 'handleSubmit' function.
   onSave: (funcionario: Omit<Funcionario, 'id' | 'avatarUrl' | 'historicoFitScore' | 'metricas' | 'risco'>) => void;
   funcionarioToEdit: Funcionario | null;
   empresas: Empresa[];
@@ -80,12 +79,14 @@ const FuncionarioModal: React.FC<{
         const empresa = empresas.find(e => e.empresaId === formData.empresaId);
         if (!empresa) return;
 
-        // Fix: Add the required 'planoExercicio' property to satisfy the type.
+        // FIX: The `onSave` callback requires the `metas` property.
+        // This also fixes a bug where editing a user would reset their exercise plan and goals.
         onSave({
             ...formData,
             fitScore: Number(formData.fitScore),
             empresaNome: empresa.nomeEmpresa,
-            planoExercicio: { nome: 'Caminhada Diária', meta: '10.000 passos por dia', frequencia: 'Diariamente', progresso: 0 },
+            planoExercicio: funcionarioToEdit?.planoExercicio || { nome: 'Caminhada Diária', meta: '10.000 passos por dia', frequencia: 'Diariamente', progresso: 0 },
+            metas: funcionarioToEdit?.metas || [],
         });
     };
 
@@ -106,35 +107,35 @@ const FuncionarioModal: React.FC<{
                     {/* Form Fields */}
                     <div>
                         <label htmlFor="nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome Completo</label>
-                        <input type="text" name="nome" value={formData.nome} onChange={handleChange} className="mt-1 block w-full" />
+                        <input type="text" name="nome" value={formData.nome} onChange={handleChange} />
                         {errors.nome && <p className="mt-1 text-xs text-red-500">{errors.nome}</p>}
                     </div>
                      <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                        <input type="email" name="email" value={formData.email} onChange={handleChange} className="mt-1 block w-full" />
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} />
                         {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                     </div>
                      <div>
                         <label htmlFor="cargo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cargo</label>
-                        <input type="text" name="cargo" value={formData.cargo} onChange={handleChange} className="mt-1 block w-full" />
+                        <input type="text" name="cargo" value={formData.cargo} onChange={handleChange} />
                          {errors.cargo && <p className="mt-1 text-xs text-red-500">{errors.cargo}</p>}
                     </div>
                      <div>
                         <label htmlFor="empresaId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Empresa</label>
-                        <select name="empresaId" value={formData.empresaId} onChange={handleChange} className="mt-1 block w-full">
+                        <select name="empresaId" value={formData.empresaId} onChange={handleChange}>
                             {empresas.map(e => <option key={e.empresaId} value={e.empresaId}>{e.nomeEmpresa}</option>)}
                         </select>
                         {errors.empresaId && <p className="mt-1 text-xs text-red-500">{errors.empresaId}</p>}
                     </div>
                     <div>
                         <label htmlFor="setor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Setor</label>
-                         <select name="setor" value={formData.setor} onChange={handleChange} className="mt-1 block w-full">
+                         <select name="setor" value={formData.setor} onChange={handleChange}>
                             {setores.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
                      <div>
                         <label htmlFor="dataAdmissao" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Admissão</label>
-                        <input type="date" name="dataAdmissao" value={formData.dataAdmissao} onChange={handleChange} className="mt-1 block w-full" />
+                        <input type="date" name="dataAdmissao" value={formData.dataAdmissao} onChange={handleChange} />
                     </div>
                     {/* Submit Buttons */}
                     <div className="mt-6 flex justify-end space-x-3 pt-4 border-t dark:border-gray-700">
@@ -230,6 +231,7 @@ const GestaoFuncionarios: React.FC = () => {
                 historicoFitScore: [],
                 metricas: { sono: 7, estresse: 40, humor: 4, energia: 4 },
                 planoExercicio: data.planoExercicio,
+                metas: data.metas,
             };
             setFuncionarios(prev => [newFuncionario, ...prev]);
         }
@@ -258,9 +260,9 @@ const GestaoFuncionarios: React.FC = () => {
                     <div className="flex w-full md:w-auto items-center gap-4">
                         <div className="flex-grow relative">
                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" placeholder="Buscar funcionário..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10" />
+                            <input type="text" placeholder="Buscar funcionário..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                         </div>
-                        <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)} className="w-auto">
+                        <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
                             <option value="all">Todas as Empresas</option>
                             {empresas.map(e => <option key={e.empresaId} value={e.empresaId}>{e.nomeEmpresa}</option>)}
                         </select>

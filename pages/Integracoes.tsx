@@ -1,6 +1,6 @@
 import React from 'react';
 import { UploadCloud, Zap, Puzzle, Users, Lock } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 import AccessDenied from '../components/ui/AccessDenied';
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string; tag?: string }> = ({ icon, title, description, tag }) => (

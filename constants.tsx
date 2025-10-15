@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Building, BarChart3, User, Bell } from 'lucide-react';
+import { LayoutDashboard, Building, BarChart3, User, Bell, Briefcase } from 'lucide-react';
 import { Papel } from './types';
 
 interface NavLinkConfig {
@@ -47,6 +47,14 @@ export const NAV_LINKS: NavLinkConfig[] = [
     label: 'Painel Analítico', 
     icon: <BarChart3 size={20} />, 
     roles: ['superadmin', 'Gerente RH'] 
+  },
+
+  // Admin-only Management
+  { 
+    href: '/gestao/empresas', 
+    label: 'Gestão de Empresas', 
+    icon: <Briefcase size={20} />, 
+    roles: ['superadmin'] 
   },
 
   // Note: Administrative links like 'Registro de Atividades' (/auditoria) and 

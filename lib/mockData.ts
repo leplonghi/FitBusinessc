@@ -1,4 +1,4 @@
-import { Funcionario, Empresa, RiscoNivel, Setor, AuditLog, Papel, PlanoExercicio } from '../types';
+import { Funcionario, Empresa, RiscoNivel, Setor, AuditLog, Papel, PlanoExercicio, Meta, MetaStatus } from '../types';
 
 const NOMES = ['Ana Lima', 'Bruno Costa', 'Carlos Dias', 'Daniela Rocha', 'Eduardo Melo', 'Fernanda Alves', 'Gustavo Borges', 'Helena Faria', 'Igor Ramos', 'Juliana Nunes'];
 const SOBRENOMES = ['Silva', 'Pereira', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Almeida', 'Gomes', 'Martins'];
@@ -14,6 +14,14 @@ const PLANOS_EXERCICIO: PlanoExercicio[] = [
     { nome: 'Corrida Leve', meta: 'Correr 5km no total', frequencia: '2x por semana', progresso: 0 },
     { nome: 'Yoga e Meditação', meta: 'Acumular 60 minutos', frequencia: '4x por semana', progresso: 0 },
     { nome: 'Desafio de Hidratação', meta: 'Beber 2L de água por dia', frequencia: 'Diariamente', progresso: 0 },
+];
+
+const METAS_BASE = [
+    { descricao: 'Completar o curso de Gestão de Estresse', status: 'Em Progresso' },
+    { descricao: 'Atingir 10.000 passos diários por 2 semanas', status: 'Não Iniciada' },
+    { descricao: 'Melhorar a média de sono para 7h por noite', status: 'Concluída' },
+    { descricao: 'Participar de 5 sessões de ginástica laboral', status: 'Em Progresso' },
+    { descricao: 'Reduzir o tempo de tela após as 22h', status: 'Não Iniciada' },
 ];
 
 
@@ -109,6 +117,20 @@ const generateFuncionarios = () => {
                 progresso: getRandomInt(0, 100),
             };
 
+            const numMetas = getRandomInt(1, 3);
+            const metas: Meta[] = [];
+            for (let k = 0; k < numMetas; k++) {
+                const metaBase = getRandomItem(METAS_BASE);
+                const dataAlvo = new Date();
+                dataAlvo.setDate(dataAlvo.getDate() + getRandomInt(15, 60));
+                metas.push({
+                    id: `m${funcionarioId}-${k}`,
+                    descricao: metaBase.descricao,
+                    status: metaBase.status as MetaStatus,
+                    dataAlvo: dataAlvo.toISOString().split('T')[0],
+                });
+            }
+
             mockFuncionarios.push({
                 id: `f${funcionarioId++}`,
                 nome,
@@ -129,6 +151,7 @@ const generateFuncionarios = () => {
                     energia: getRandomInt(1, 5),
                 },
                 planoExercicio,
+                metas,
             });
         }
     });

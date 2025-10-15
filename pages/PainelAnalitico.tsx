@@ -1,17 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { TrendingDown, ShieldCheck, ShieldHalf, TrendingUp, SlidersHorizontal, FileDown, BarChart3, LineChart as LineChartIcon, FileText as FileTextIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
+import { useTheme } from '../hooks/useTheme';
 import Card from '../components/ui/Card';
 import InsightCard from '../components/ui/InsightCard';
 import { generateIrsTimeline, generateMockEmpresas, generateFitScorePrediction, generateOtherPredictions } from '../lib/mockData';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 import { Empresa } from '../types';
 
 type Tab = 'risco' | 'previsoes' | 'relatorios';
 
 // TAB COMPONENT: AnaliseRiscoTab
 const AnaliseRiscoTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
+    const { theme } = useTheme();
+    const tickColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
+    const tooltipBackgroundColor = theme === 'dark' ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+    const tooltipBorderColor = theme === 'dark' ? '#374151' : '#E5E7EB';
+    
     const allEmpresas = useMemo(() => generateMockEmpresas(), []);
 
     const dataEmpresas = useMemo(() => {
@@ -55,9 +60,9 @@ const AnaliseRiscoTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
                     <ResponsiveContainer width="100%" height={350}>
                         <LineChart data={irsTimeline}>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                            <XAxis dataKey="date" tick={{ fill: '#8A94A6', fontSize: 12 }} />
-                            <YAxis domain={[0, 100]} tick={{ fill: '#8A94A6', fontSize: 12 }}/>
-                            <Tooltip />
+                            <XAxis dataKey="date" tick={{ fill: tickColor, fontSize: 12 }} />
+                            <YAxis domain={[0, 100]} tick={{ fill: tickColor, fontSize: 12 }}/>
+                            <Tooltip contentStyle={{ backgroundColor: tooltipBackgroundColor, backdropFilter: 'blur(5px)', border: `1px solid ${tooltipBorderColor}`, borderRadius: '0.75rem' }} />
                             <Line type="monotone" dataKey="irs" name="IRS" stroke="#F6AD55" strokeWidth={2} />
                         </LineChart>
                     </ResponsiveContainer>
@@ -70,6 +75,11 @@ const AnaliseRiscoTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
 
 // TAB COMPONENT: PrevisoesTendenciasTab
 const PrevisoesTendenciasTab: React.FC<{ empresaId?: string }> = ({ empresaId }) => {
+    const { theme } = useTheme();
+    const tickColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
+    const tooltipBackgroundColor = theme === 'dark' ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+    const tooltipBorderColor = theme === 'dark' ? '#374151' : '#E5E7EB';
+
     const predictionData = useMemo(() => generateFitScorePrediction(), [empresaId]);
     const otherPredictions = useMemo(() => generateOtherPredictions(), [empresaId]);
 
@@ -81,9 +91,9 @@ const PrevisoesTendenciasTab: React.FC<{ empresaId?: string }> = ({ empresaId })
                     <ResponsiveContainer width="100%" height={350}>
                         <LineChart data={predictionData}>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
-                            <XAxis dataKey="date" tick={{ fill: '#8A94A6', fontSize: 12 }} />
-                            <YAxis domain={[60, 90]} tick={{ fill: '#8A94A6', fontSize: 12 }} />
-                            <Tooltip />
+                            <XAxis dataKey="date" tick={{ fill: tickColor, fontSize: 12 }} />
+                            <YAxis domain={[60, 90]} tick={{ fill: tickColor, fontSize: 12 }} />
+                            <Tooltip contentStyle={{ backgroundColor: tooltipBackgroundColor, backdropFilter: 'blur(5px)', border: `1px solid ${tooltipBorderColor}`, borderRadius: '0.75rem' }} />
                             <Legend />
                             <Line type="monotone" dataKey="real" name="FitScore Real" stroke="#0A2342" strokeWidth={2} connectNulls />
                             <Line type="monotone" dataKey="previsto" name="FitScore Previsto" stroke="#48BB78" strokeWidth={2} strokeDasharray="5 5" connectNulls />
@@ -130,8 +140,8 @@ const RelatoriosInteligentesTab: React.FC<{ empresaId?: string }> = ({ empresaId
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Gerador de Relatórios Inteligentes</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Empresa</label>
-                        <select id="empresa" disabled={!!empresaId} value={empresaId || 'Todas'} className="mt-1 block w-full rounded-md border-gray-300 disabled:bg-gray-200 dark:disabled:bg-gray-600" >
+                        <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+                        <select id="empresa" disabled={!!empresaId} value={empresaId || 'Todas'}>
                             {empresaId && currentCompany ? (
                                 <option value={currentCompany.empresaId}>{currentCompany.nomeEmpresa}</option>
                             ) : (
@@ -143,22 +153,22 @@ const RelatoriosInteligentesTab: React.FC<{ empresaId?: string }> = ({ empresaId
                         </select>
                     </div>
                      <div>
-                        <label htmlFor="periodo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Período</label>
-                        <select id="periodo" className="mt-1 block w-full rounded-md border-gray-300">
+                        <label htmlFor="periodo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Período</label>
+                        <select id="periodo">
                             <option>Últimos 30 dias</option>
                             <option>Últimos 3 meses</option>
                             <option>Último ano</option>
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="setor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Setor</label>
-                        <select id="setor" className="mt-1 block w-full rounded-md border-gray-300">
+                        <label htmlFor="setor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Setor</label>
+                        <select id="setor">
                             <option>Todos</option>
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="indicador" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Indicador</label>
-                        <select id="indicador" className="mt-1 block w-full rounded-md border-gray-300">
+                        <label htmlFor="indicador" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Indicador</label>
+                        <select id="indicador">
                             <option>Todos</option>
                         </select>
                     </div>

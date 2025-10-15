@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ActivitySquare, AlertTriangle } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.tsx';
 import { FirebaseError } from 'firebase/app';
 import { isFirebaseConfigured } from '../services/authService';
 
@@ -122,12 +122,12 @@ const Login: React.FC = () => {
 
           <form className="space-y-6" onSubmit={handleEmailSubmit}>
             <div className="space-y-4">
-              <input id="email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" placeholder="Email"/>
-              <input id="password" name="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full" placeholder="Senha"/>
+              <input id="email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"/>
+              <input id="password" name="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Senha"/>
             </div>
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
             <div>
-              <button type="submit" disabled={!isConfigured || loading} className="group relative flex w-full justify-center rounded-md border border-transparent bg-fit-dark-blue py-2 px-4 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue focus:ring-offset-2 disabled:bg-gray-400">
+              <button type="submit" disabled={!isConfigured || loading} className="group relative flex w-full justify-center rounded-md border border-transparent bg-fit-dark-blue py-2 px-4 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-fit-dark-blue focus:ring-offset-2 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed">
                 {loading ? 'Entrando...' : 'Entrar com Email'}
               </button>
             </div>

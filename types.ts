@@ -23,6 +23,15 @@ export interface PlanoExercicio {
   frequencia: string;
 }
 
+export type MetaStatus = 'Não Iniciada' | 'Em Progresso' | 'Concluída';
+
+export interface Meta {
+  id: string;
+  descricao: string;
+  dataAlvo: string;
+  status: MetaStatus;
+}
+
 export interface Funcionario {
   id: string;
   nome: string;
@@ -43,6 +52,7 @@ export interface Funcionario {
     energia: number;
   };
   planoExercicio: PlanoExercicio;
+  metas: Meta[];
 }
 
 export interface Endereco {

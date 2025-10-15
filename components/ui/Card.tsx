@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { Star } from 'lucide-react';
 
 interface CardProps {
   title: string;
@@ -8,13 +9,20 @@ interface CardProps {
   changeType?: 'positive' | 'negative';
   children?: ReactNode;
   className?: string;
+  isPremium?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ title, value, icon, change, changeType, children, className = '' }) => {
+const Card: React.FC<CardProps> = ({ title, value, icon, change, changeType, children, className = '', isPremium = false }) => {
   const changeColor = changeType === 'positive' ? 'text-fit-green' : 'text-fit-red';
 
   return (
-    <div className={`bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col ${className}`}>
+    <div className={`relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ${className}`}>
+      {isPremium && (
+        <div className="absolute top-4 right-4 bg-fit-orange text-white text-xs font-bold px-2 py-1 rounded-full flex items-center z-10">
+            <Star size={12} className="mr-1" />
+            PREMIUM
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-fit-gray">{title}</p>

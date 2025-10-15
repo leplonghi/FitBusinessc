@@ -2,19 +2,38 @@ import { GoogleGenAI } from "@google/genai";
 
 type PromptKey = "visaoGeral" | "analiseRisco" | "relatorio" | "previsao";
 
+const sanitizeKey = (raw: string | undefined | null): string | undefined => {
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
+};
+
 const resolveApiKey = (): string | undefined => {
   const importMetaEnv =
-    typeof import.meta !== "undefined" && import.meta.env
-      ? (import.meta.env.VITE_GEMINI_API_KEY as string | undefined) ??
-        (import.meta.env.API_KEY as string | undefined)
+    typeof import.meta !== "undefined"
+      ? (import.meta as ImportMeta & {
+          env?: Record<string, unknown>;
+        }).env
       : undefined;
 
-  if (importMetaEnv) {
-    return importMetaEnv;
+  const fromImportMeta = importMetaEnv
+    ? sanitizeKey(
+        (importMetaEnv["VITE_GEMINI_API_KEY"] as string | undefined) ??
+          (importMetaEnv["GEMINI_API_KEY"] as string | undefined) ??
+          (importMetaEnv["GOOGLE_API_KEY"] as string | undefined)
+      )
+    : undefined;
+
+  if (fromImportMeta) {
+    return fromImportMeta;
   }
 
   if (typeof process !== "undefined" && process.env) {
-    return process.env.VITE_GEMINI_API_KEY ?? process.env.API_KEY;
+    return sanitizeKey(
+      process.env.VITE_GEMINI_API_KEY ??
+        process.env.GEMINI_API_KEY ??
+        process.env.GOOGLE_API_KEY ??
+        process.env.API_KEY
+    );
   }
 
   return undefined;

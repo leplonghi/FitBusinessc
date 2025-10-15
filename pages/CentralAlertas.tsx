@@ -67,7 +67,7 @@ const CentralAlertas: React.FC = () => {
                     <Bell size={24} className="text-fit-dark-blue mr-3" />
                     <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Central de Alertas e Insights</h2>
                 </div>
-                <p className="text-fit-gray">
+                <p className="text-gray-500 dark:text-gray-400">
                     Monitore proativamente os principais riscos, oportunidades e tendências identificados pela nossa IA em todas as empresas.
                 </p>
              </div>
@@ -81,7 +81,7 @@ const CentralAlertas: React.FC = () => {
                                 <h3 className="font-semibold text-gray-900 dark:text-white">{alert.title}</h3>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">{alert.date}</span>
                             </div>
-                            <p className="text-sm text-fit-gray mt-1">{alert.description}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{alert.description}</p>
                             <div className="mt-2">
                                 <span className="inline-block bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                                     {alert.company}

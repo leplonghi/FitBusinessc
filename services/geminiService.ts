@@ -1,14 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Added a check for 'process' to prevent a ReferenceError in browser environments.
-const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+// Assume the build environment (e.g., Vite) handles environment variables.
+// The API key should be injected at build time. For this environment, we'll
+// treat it as potentially undefined and provide mock data as a fallback.
+const apiKey = process.env.API_KEY;
 
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
   ai = new GoogleGenAI({ apiKey });
 } else {
   console.warn(
-    "API_KEY environment variable is not set or accessible. Gemini API will not be used. Falling back to mock data."
+    "API_KEY environment variable not set. Gemini API will not be used. Falling back to mock data."
   );
 }
 

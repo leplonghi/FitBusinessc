@@ -34,7 +34,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ promptKey, title }) => {
                     <Spinner />
                 </div>
             ) : (
-                <p className="text-sm text-fit-gray dark:text-gray-300 leading-relaxed">
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     {insight}
                 </p>
             )}

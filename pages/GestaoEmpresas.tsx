@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
-// FIX: Import the 'X' icon from lucide-react.
-import { Plus, Search, Building, X } from 'lucide-react';
-import { Empresa, Funcionario } from '../types';
-import { useAuth } from '../hooks/useAuth.tsx';
-import AccessDenied from '../components/ui/AccessDenied';
-import EmpresaListView from '../components/views/EmpresaListView';
-import EmpresaFuncionariosView from '../components/views/EmpresaFuncionariosView';
+import React, { useState } from 'react';
+import { Plus, Building, X } from 'lucide-react';
+// FIX: Add .ts extension
+import { Empresa } from '../types.ts';
+// FIX: Add .tsx extension
+import EmpresaListView from '../components/views/EmpresaListView.tsx';
+import EmpresaFuncionariosView from '../components/views/EmpresaFuncionariosView.tsx';
+// FIX: Add .tsx extension
+import { useData } from '../hooks/useData.tsx';
+import { formatCNPJ } from '../lib/utils.ts';
+import ConfirmationModal from '../components/ui/ConfirmationModal.tsx';
 
-const formatCNPJ = (value: string) => value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1/$2').replace(/(\d{4})(\d)/, '$1-$2').slice(0, 18);
-
+// FIX: Moved EmpresaModal outside of GestaoEmpresas to prevent hook order errors.
 const EmpresaModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -29,7 +31,6 @@ const EmpresaModal: React.FC<{
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        const type = (e.target as HTMLInputElement).type;
         const keys = name.split('.');
 
         if (keys.length > 1) {
@@ -42,8 +43,7 @@ const EmpresaModal: React.FC<{
                 }
             }));
         } else {
-             const finalValue = type === 'number' ? (parseInt(value, 10) || 0) : value;
-             setFormData(prev => ({ ...prev, [name]: finalValue }));
+             setFormData(prev => ({ ...prev, [name]: value }));
         }
     };
     
@@ -52,9 +52,6 @@ const EmpresaModal: React.FC<{
         if (!formData.nomeEmpresa?.trim()) newErrors.nomeEmpresa = "O nome é obrigatório.";
         if (!formData.cnpj?.trim()) newErrors.cnpj = "O CNPJ é obrigatório.";
         else if (formData.cnpj.length !== 18) newErrors.cnpj = "CNPJ inválido.";
-        if (formData.funcionariosAtivos !== undefined && formData.funcionariosAtivos < 0) {
-            newErrors.funcionariosAtivos = "O número de funcionários não pode ser negativo.";
-        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -73,27 +70,85 @@ const EmpresaModal: React.FC<{
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:hover:text-white"><X size={24} /></button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                    {/* Form fields remain the same */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome da Empresa</label>
+                            <input name="nomeEmpresa" value={formData.nomeEmpresa || ''} onChange={handleChange} />
+                            {errors.nomeEmpresa && <p className="text-xs text-red-500 mt-1">{errors.nomeEmpresa}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CNPJ</label>
+                            <input name="cnpj" value={formData.cnpj || ''} onChange={(e) => handleChange({ ...e, target: { ...e.target, name: 'cnpj', value: formatCNPJ(e.target.value) } })} />
+                            {errors.cnpj && <p className="text-xs text-red-500 mt-1">{errors.cnpj}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Setor</label>
+                            <select name="setor" value={formData.setor || 'Tecnologia'} onChange={handleChange}>
+                                <option value="Tecnologia">Tecnologia</option>
+                                <option value="Indústria">Indústria</option>
+                                <option value="Logística">Logística</option>
+                                <option value="Varejo">Varejo</option>
+                                <option value="Saúde">Saúde</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                            <select name="status" value={formData.status || 'Ativa'} onChange={handleChange}>
+                                <option value="Ativa">Ativa</option>
+                                <option value="Inativa">Inativa</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="pt-2">
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-300">Endereço</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rua e Número</label>
+                                <input name="endereco.rua" value={formData.endereco?.rua || ''} onChange={handleChange} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bairro</label>
+                                <input name="endereco.bairro" value={formData.endereco?.bairro || ''} onChange={handleChange} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cidade e Estado</label>
+                                <input name="endereco.cidade" value={formData.endereco?.cidade || ''} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </div>
+                     <div className="pt-2">
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-300">Contato</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email de Contato</label>
+                                <input type="email" name="contato.email" value={formData.contato?.email || ''} onChange={handleChange} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone</label>
+                                <input name="contato.telefone" value={formData.contato?.telefone || ''} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-end pt-4 border-t dark:border-gray-700 mt-4 space-x-3">
+                        <button type="button" onClick={onClose} className="btn btn-secondary">
+                            Cancelar
+                        </button>
+                        <button type="submit" className="btn btn-primary">
+                            {empresaToEdit ? 'Salvar Alterações' : 'Salvar Empresa'}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
     );
 };
 
-const GestaoEmpresas: React.FC<{
-  allEmpresas: Empresa[];
-  setAllEmpresas: React.Dispatch<React.SetStateAction<Empresa[]>>;
-  allFuncionarios: Funcionario[];
-  setAllFuncionarios: React.Dispatch<React.SetStateAction<Funcionario[]>>;
-}> = ({ allEmpresas, setAllEmpresas, allFuncionarios, setAllFuncionarios }) => {
-    const { user } = useAuth();
+const GestaoEmpresas: React.FC = () => {
+    const { empresas, addEmpresa, updateEmpresa, deleteEmpresa } = useData();
     const [isEmpresaModalOpen, setIsEmpresaModalOpen] = useState(false);
     const [empresaToEdit, setEmpresaToEdit] = useState<Empresa | null>(null);
     const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
-
-    if (user?.papel !== 'superadmin') {
-        return <AccessDenied message="Apenas administradores podem gerenciar as empresas." />;
-    }
+    const [empresaToDelete, setEmpresaToDelete] = useState<Empresa | null>(null);
 
     const handleOpenAddEmpresaModal = () => {
         setEmpresaToEdit(null);
@@ -107,105 +162,71 @@ const GestaoEmpresas: React.FC<{
     
     const handleSaveEmpresa = (empresaData: Partial<Empresa>) => {
         if (empresaToEdit) {
-            setAllEmpresas(prev => prev.map(e => e.empresaId === empresaToEdit.empresaId ? { ...e, ...empresaData } as Empresa : e));
+            updateEmpresa({ ...empresaToEdit, ...empresaData });
         } else {
-            const newEmpresa: Empresa = {
-                empresaId: `e${Date.now()}`,
-                nomeEmpresa: 'Nova Empresa',
-                status: 'Ativa',
-                irs: 75,
-                funcionariosAtivos: 0,
-                mediaFitScore: 0,
-                taxaEngajamento: 0,
-                alertasRisco: 0,
-                cnpj: '',
-                setor: 'Tecnologia',
-                cultura: '',
-                dataCriacao: new Date().toISOString().split('T')[0],
-                endereco: { rua: '', bairro: '', cidade: '', cep: '' },
-                contato: { email: '', telefone: '' },
-                ...empresaData,
-            };
-            setAllEmpresas(prev => [newEmpresa, ...prev]);
+            addEmpresa(empresaData);
         }
         setIsEmpresaModalOpen(false);
     };
 
-    const handleDeleteEmpresa = (empresaId: string) => {
-        if (window.confirm("Tem certeza que deseja excluir esta empresa? Esta ação não pode ser desfeita e excluirá também seus funcionários.")) {
-            setAllEmpresas(prev => prev.filter(e => e.empresaId !== empresaId));
-            setAllFuncionarios(prev => prev.filter(f => f.empresaId !== empresaId));
+    const handleDeleteEmpresa = () => {
+        if (empresaToDelete) {
+            deleteEmpresa(empresaToDelete.empresaId);
+            setEmpresaToDelete(null);
         }
     };
-    
-    const handleSaveFuncionario = (funcData: Funcionario, isEditing: boolean) => {
-        if (isEditing) {
-            setAllFuncionarios(prev => prev.map(f => f.id === funcData.id ? funcData : f));
-        } else {
-             setAllFuncionarios(prev => [funcData, ...prev]);
-             setAllEmpresas(prev => prev.map(e => e.empresaId === funcData.empresaId ? { ...e, funcionariosAtivos: e.funcionariosAtivos + 1 } : e));
-        }
-    };
-
-    const handleDeleteFuncionario = (funcId: string) => {
-        const funcToDelete = allFuncionarios.find(f => f.id === funcId);
-        if (!funcToDelete) return;
-
-        if (window.confirm("Tem certeza que deseja excluir este funcionário?")) {
-            setAllFuncionarios(prev => prev.filter(f => f.id !== funcId));
-            setAllEmpresas(prev => prev.map(e => e.empresaId === funcToDelete.empresaId ? { ...e, funcionariosAtivos: Math.max(0, e.funcionariosAtivos - 1) } : e));
-        }
-    };
-    
-    const handleImportFuncionarios = (newFuncionarios: Funcionario[]) => {
-        if (!selectedEmpresa || newFuncionarios.length === 0) return;
-        
-        setAllFuncionarios(prev => [...prev, ...newFuncionarios]);
-        setAllEmpresas(prev => prev.map(e => e.empresaId === selectedEmpresa.empresaId ? { ...e, funcionariosAtivos: e.funcionariosAtivos + newFuncionarios.length } : e));
-    };
-
-    if (selectedEmpresa) {
-        const empresaFuncionarios = allFuncionarios.filter(f => f.empresaId === selectedEmpresa.empresaId);
-        return (
-            <EmpresaFuncionariosView
-                empresa={selectedEmpresa}
-                funcionarios={empresaFuncionarios}
-                onBack={() => setSelectedEmpresa(null)}
-                onSaveFuncionario={handleSaveFuncionario}
-                onDeleteFuncionario={handleDeleteFuncionario}
-                onImportFuncionarios={handleImportFuncionarios}
-            />
-        );
-    }
 
     return (
         <>
-            <div className="space-y-6">
-                 <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center">
-                             <Building size={24} className="text-fit-dark-blue mr-3" />
-                             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Gestão de Empresas</h2>
+            {/* Main container to ensure a stable component tree */}
+            <div>
+                {/* Company List View */}
+                <div style={{ display: selectedEmpresa ? 'none' : 'block' }}>
+                    <div className="space-y-6">
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div className="flex items-center">
+                                    <Building size={24} className="text-fit-dark-blue mr-3" />
+                                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Gestão de Empresas</h2>
+                                </div>
+                                <button onClick={handleOpenAddEmpresaModal} className="btn btn-primary">
+                                    <Plus size={16} className="mr-2" />
+                                    Adicionar Empresa
+                                </button>
+                            </div>
                         </div>
-                        <button onClick={handleOpenAddEmpresaModal} className="flex items-center bg-fit-dark-blue text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors whitespace-nowrap">
-                            <Plus size={16} className="mr-2" />
-                            Adicionar Empresa
-                        </button>
+                        <EmpresaListView
+                            empresas={empresas}
+                            onSelectEmpresa={setSelectedEmpresa}
+                            onEditEmpresa={handleOpenEditEmpresaModal}
+                            onDeleteEmpresa={(empresa) => setEmpresaToDelete(empresa)}
+                        />
                     </div>
                 </div>
-                <EmpresaListView
-                    empresas={allEmpresas}
-                    funcionariosCount={allFuncionarios.reduce((acc, f) => ({ ...acc, [f.empresaId]: (acc[f.empresaId] || 0) + 1 }), {} as { [key: string]: number })}
-                    onSelectEmpresa={setSelectedEmpresa}
-                    onEditEmpresa={handleOpenEditEmpresaModal}
-                    onDeleteEmpresa={handleDeleteEmpresa}
-                />
+
+                {/* Employee Management View */}
+                <div style={{ display: selectedEmpresa ? 'block' : 'none' }}>
+                    {selectedEmpresa && (
+                        <EmpresaFuncionariosView
+                            empresa={selectedEmpresa}
+                            onBack={() => setSelectedEmpresa(null)}
+                        />
+                    )}
+                </div>
             </div>
+            
             <EmpresaModal
                 isOpen={isEmpresaModalOpen}
                 onClose={() => setIsEmpresaModalOpen(false)}
                 onSave={handleSaveEmpresa}
                 empresaToEdit={empresaToEdit}
+            />
+            <ConfirmationModal
+                isOpen={!!empresaToDelete}
+                onClose={() => setEmpresaToDelete(null)}
+                onConfirm={handleDeleteEmpresa}
+                title="Confirmar Exclusão"
+                message={`Tem certeza que deseja excluir a empresa "${empresaToDelete?.nomeEmpresa}"? Esta ação não pode ser desfeita e excluirá todos os seus funcionários.`}
             />
         </>
     );

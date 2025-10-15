@@ -1,7 +1,9 @@
+
 import React, { useState, useCallback } from 'react';
 import { X, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
-import { Empresa, Funcionario } from '../../types';
-import Spinner from './Spinner';
+// FIX: Add .ts extension
+import { Empresa, Funcionario } from '../../types.ts';
+import Spinner from './Spinner.tsx';
 
 interface BulkImportModalProps {
   isOpen: boolean;
@@ -127,18 +129,18 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, onCo
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {step === 'upload' && (
             <div className="text-center space-y-4">
-              <h4 className="font-semibold text-lg">Passo 1: Prepare seus dados</h4>
-              <p className="text-fit-gray">Para garantir uma importação sem erros, use nosso modelo CSV. Ele contém as colunas necessárias no formato correto.</p>
-              <button onClick={handleDownloadTemplate} className="text-sm font-medium text-fit-dark-blue hover:underline">
+              <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-200">Passo 1: Prepare seus dados</h4>
+              <p className="text-gray-500 dark:text-gray-400">Para garantir uma importação sem erros, use nosso modelo CSV. Ele contém as colunas necessárias no formato correto.</p>
+              <button onClick={handleDownloadTemplate} className="btn btn-link">
                 Baixar modelo de importação (.csv)
               </button>
               <div className="mt-4 border-t pt-4 dark:border-gray-600">
-                <h4 className="font-semibold text-lg">Passo 2: Envie o arquivo</h4>
+                <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-200">Passo 2: Envie o arquivo</h4>
                 <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
                     <div className="space-y-1 text-center">
                         <FileText size={48} className="mx-auto text-gray-400"/>
                         <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                            <label htmlFor="file-upload" className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-fit-dark-blue hover:text-opacity-80 focus-within:outline-none">
+                            <label htmlFor="file-upload" className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-fit-dark-blue dark:text-fit-orange hover:text-opacity-80 focus-within:outline-none">
                                 <span>Selecione um arquivo</span>
                                 <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".csv" onChange={handleFileChange} />
                             </label>
@@ -148,14 +150,14 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, onCo
                     </div>
                 </div>
                  {isLoading && <div className="mt-4"><Spinner /></div>}
-                 {fileName && <p className="mt-2 text-sm text-fit-gray">Arquivo selecionado: {fileName}</p>}
+                 {fileName && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Arquivo selecionado: {fileName}</p>}
               </div>
             </div>
           )}
           
           {step === 'preview' && (
              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">Resultados da Validação</h4>
+                <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-200">Resultados da Validação</h4>
                 <div className="flex items-center p-3 rounded-md bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300">
                     <CheckCircle size={20} className="mr-3"/>
                     <span>{validRows.length} funcionários prontos para importação.</span>
@@ -174,8 +176,8 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, onCo
                     </div>
                 )}
                 <div className="mt-6 flex justify-between">
-                    <button onClick={resetState} className="px-4 py-2 text-sm font-medium bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500">Enviar Outro Arquivo</button>
-                    <button onClick={handleImport} disabled={validRows.length === 0} className="px-4 py-2 text-sm font-medium text-white bg-fit-dark-blue rounded-md hover:bg-opacity-90 disabled:bg-gray-400">
+                    <button onClick={resetState} className="btn btn-secondary">Enviar Outro Arquivo</button>
+                    <button onClick={handleImport} disabled={validRows.length === 0} className="btn btn-primary">
                         Confirmar e Importar {validRows.length} Funcionários
                     </button>
                 </div>
@@ -186,7 +188,7 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, onCo
             <div className="text-center py-8">
                 <CheckCircle size={48} className="mx-auto text-fit-green mb-4"/>
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Importação Concluída!</h3>
-                <p className="mt-2 text-fit-gray">{validRows.length} novos funcionários foram adicionados com sucesso.</p>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">{validRows.length} novos funcionários foram adicionados com sucesso.</p>
             </div>
           )}
 

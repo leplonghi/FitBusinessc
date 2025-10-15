@@ -1,324 +1,181 @@
-import { Funcionario, Empresa, RiscoNivel, Setor, AuditLog, Papel, PlanoExercicio, Meta, MetaStatus } from '../types';
+import { Empresa, Funcionario, AuditLog, HistoricoFitScore, RiscoNivel } from '../types.ts';
 
-const NOMES = ['Ana Lima', 'Bruno Costa', 'Carlos Dias', 'Daniela Rocha', 'Eduardo Melo', 'Fernanda Alves', 'Gustavo Borges', 'Helena Faria', 'Igor Ramos', 'Juliana Nunes'];
-const SOBRENOMES = ['Silva', 'Pereira', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Almeida', 'Gomes', 'Martins'];
-const CARGOS_TECNOLOGIA = ['Engenheiro de Software', 'Analista de Dados', 'Designer UX/UI', 'Gerente de Produto', 'DevOps'];
-const CARGOS_INDUSTRIA = ['Operador de Máquinas', 'Engenheiro de Produção', 'Técnico de Manutenção', 'Supervisor de Qualidade'];
-const CARGOS_LOGISTICA = ['Analista de Logística', 'Coordenador de Transporte', 'Gerente de Armazém'];
-const CARGOS_VAREJO = ['Gerente de Loja', 'Vendedor', 'Analista de Estoque'];
-const CARGOS_SAUDE = ['Enfermeiro(a)', 'Analista Clínico', 'Coordenador de Atendimento'];
-
-const PLANOS_EXERCICIO: PlanoExercicio[] = [
-    { nome: 'Caminhada Diária', meta: '10.000 passos por dia', frequencia: 'Diariamente', progresso: 0 },
-    { nome: 'Ginástica Laboral', meta: 'Participar de 3 sessões', frequencia: '3x por semana', progresso: 0 },
-    { nome: 'Corrida Leve', meta: 'Correr 5km no total', frequencia: '2x por semana', progresso: 0 },
-    { nome: 'Yoga e Meditação', meta: 'Acumular 60 minutos', frequencia: '4x por semana', progresso: 0 },
-    { nome: 'Desafio de Hidratação', meta: 'Beber 2L de água por dia', frequencia: 'Diariamente', progresso: 0 },
-];
-
-const METAS_BASE = [
-    { descricao: 'Completar o curso de Gestão de Estresse', status: 'Em Progresso' },
-    { descricao: 'Atingir 10.000 passos diários por 2 semanas', status: 'Não Iniciada' },
-    { descricao: 'Melhorar a média de sono para 7h por noite', status: 'Concluída' },
-    { descricao: 'Participar de 5 sessões de ginástica laboral', status: 'Em Progresso' },
-    { descricao: 'Reduzir o tempo de tela após as 22h', status: 'Não Iniciada' },
-];
-
-
-const EMPRESAS_BASE: Omit<Empresa, 'funcionariosAtivos' | 'mediaFitScore' | 'taxaEngajamento' | 'alertasRisco' | 'irsHistory'>[] = [
-    { 
-        empresaId: 'e1', nomeEmpresa: 'InovaTech Soluções', status: 'Ativa', irs: 85, website: 'https://inova.tech',
-        cnpj: '33.072.207/0001-60', setor: 'Tecnologia', cultura: 'Ágil e Colaborativa', dataCriacao: '2018-03-15',
-        endereco: { rua: 'Av. das Nações Unidas, 12901', bairro: 'Brooklin Paulista', cidade: 'São Paulo, SP', cep: '04578-910' },
-        contato: { email: 'contato@inova.tech', telefone: '(11) 98765-4321' }
-    },
-    { 
-        empresaId: 'e2', nomeEmpresa: 'Manufatura Forte', status: 'Ativa', irs: 65, website: 'https://manufaturaforte.com.br',
-        cnpj: '44.182.318/0001-71', setor: 'Indústria', cultura: 'Focada em Segurança', dataCriacao: '2010-07-22',
-        endereco: { rua: 'Rua da Indústria, 500', bairro: 'Distrito Industrial', cidade: 'Joinville, SC', cep: '89219-500' },
-        contato: { email: 'rh@manufaturaforte.com.br', telefone: '(47) 91234-5678' }
-    },
-    { 
-        empresaId: 'e3', nomeEmpresa: 'LogiExpress Brasil', status: 'Ativa', irs: 48,
-        cnpj: '55.293.429/0001-82', setor: 'Logística', cultura: 'Orientada a Resultados', dataCriacao: '2015-11-01',
-        endereco: { rua: 'Rod. Anhanguera, km 100', bairro: 'Jardim Eulina', cidade: 'Campinas, SP', cep: '13063-400' },
-        contato: { email: 'operacoes@logiexpress.com', telefone: '(19) 95555-4444' }
-    },
-    { 
-        empresaId: 'e4', nomeEmpresa: 'Varejo Ponto Certo', status: 'Inativa', irs: 72,
-        cnpj: '66.304.530/0001-93', setor: 'Varejo', cultura: 'Foco no Cliente', dataCriacao: '2012-01-30',
-        endereco: { rua: 'Rua Sete de Setembro, 1234', bairro: 'Centro', cidade: 'Curitiba, PR', cep: '80010-000' },
-        contato: { email: 'suporte@varejopontocerto.com', telefone: '(41) 93333-2222' }
-    },
-    { 
-        empresaId: 'e5', nomeEmpresa: 'Clínica Bem Viver', status: 'Ativa', irs: 92, website: 'https://clinicabemviver.med.br',
-        cnpj: '77.415.641/0001-04', setor: 'Saúde', cultura: 'Cuidado e Empatia', dataCriacao: '2020-05-10',
-        endereco: { rua: 'Av. Angélica, 2578', bairro: 'Consolação', cidade: 'São Paulo, SP', cep: '01228-200' },
-        contato: { email: 'adm@clinicabemviver.med.br', telefone: '(11) 97777-8888' }
-    },
-];
-
-const SETORES: Setor[] = ['Tecnologia', 'Indústria', 'Logística', 'Varejo', 'Saúde'];
-
-const getRandomItem = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
-const getRandomInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
-const toKebabCase = (str: string) => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-
-let mockFuncionarios: Funcionario[] = [];
-let mockEmpresas: Empresa[] = [];
-
-const generateIrsHistory = (baseIrs: number): { date: string; irs: number }[] => {
-    const history = [];
-    let currentIrs = baseIrs;
-    for (let i = 5; i >= 0; i--) {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        history.push({
-            date: date.toISOString().split('T')[0],
-            irs: currentIrs,
-        });
-        currentIrs = getRandomInt(Math.max(20, currentIrs - 10), Math.min(100, currentIrs + 10));
-    }
-    return history;
+const generateHistoricoFitScore = (baseScore: number): HistoricoFitScore[] => {
+  const historico: HistoricoFitScore[] = [];
+  let currentScore = baseScore;
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    currentScore += Math.floor(Math.random() * 11) - 5; // Fluctuate by -5 to +5
+    currentScore = Math.max(0, Math.min(100, currentScore)); // Clamp between 0 and 100
+    historico.push({
+      date: date.toISOString().split('T')[0],
+      score: currentScore,
+    });
+  }
+  return historico;
 };
 
-const generateFuncionarios = () => {
-    if (mockFuncionarios.length > 0) return;
-    
-    let funcionarioId = 1;
-    EMPRESAS_BASE.forEach(empresaBase => {
-        const numFuncionarios = getRandomInt(50, 150);
-        const setor = empresaBase.setor;
-        
-        const cargos = setor === 'Tecnologia' ? CARGOS_TECNOLOGIA :
-                       setor === 'Indústria' ? CARGOS_INDUSTRIA :
-                       setor === 'Logística' ? CARGOS_LOGISTICA :
-                       setor === 'Varejo' ? CARGOS_VAREJO : CARGOS_SAUDE;
 
-        for (let i = 0; i < numFuncionarios; i++) {
-            const nome = `${getRandomItem(NOMES)} ${getRandomItem(SOBRENOMES)}`;
-            const fitScore = getRandomInt(40, 100);
-            let risco: RiscoNivel;
-            if (fitScore < 60) risco = 'Alto';
-            else if (fitScore < 80) risco = 'Médio';
-            else risco = 'Baixo';
-            
-            const historicoFitScore = Array.from({ length: 12 }, (_, j) => {
-                const date = new Date();
-                date.setMonth(date.getMonth() - (11 - j));
-                return {
-                    date: date.toISOString().split('T')[0],
-                    score: getRandomInt(Math.max(40, fitScore - 15), Math.min(100, fitScore + 15))
-                }
-            });
+const MOCK_EMPRESAS: Omit<Empresa, 'empresaId' | 'totalFuncionarios' | 'fitScoreMedio'>[] = [
+    {
+        nomeEmpresa: "InovaTech Soluções",
+        cnpj: "11.222.333/0001-44",
+        setor: "Tecnologia",
+        status: "Ativa",
+        riscoMedio: "Baixo",
+        irs: 82,
+        endereco: { rua: "Av. Inovação, 123", bairro: "Tecnoparque", cidade: "São Paulo, SP", cep: "01234-567" },
+        contato: { email: "contato@inovatech.com", telefone: "(11) 98765-4321" },
+    },
+    {
+        nomeEmpresa: "Manufatura Forte",
+        cnpj: "55.666.777/0001-88",
+        setor: "Indústria",
+        status: "Ativa",
+        riscoMedio: "Médio",
+        irs: 65,
+        endereco: { rua: "Rua da Produção, 456", bairro: "Distrito Industrial", cidade: "Joinville, SC", cep: "89200-000" },
+        contato: { email: "contato@manufaturaforte.com.br", telefone: "(47) 91234-5678" },
+    },
+    {
+        nomeEmpresa: "LogiExpress Brasil",
+        cnpj: "99.888.777/0001-66",
+        setor: "Logística",
+        status: "Ativa",
+        riscoMedio: "Alto",
+        irs: 48,
+        endereco: { rua: "Rod. Principal, Km 10", bairro: "Centro Logístico", cidade: "Cajamar, SP", cep: "07750-000" },
+        contato: { email: "operacoes@logiexpress.com", telefone: "(11) 95555-1234" },
+    },
+    {
+        nomeEmpresa: "Varejo Total",
+        cnpj: "12.345.678/0001-99",
+        setor: "Varejo",
+        status: "Inativa",
+        riscoMedio: "Baixo",
+        irs: 77,
+        endereco: { rua: "R. Comercial, 789", bairro: "Centro", cidade: "Rio de Janeiro, RJ", cep: "20000-000" },
+        contato: { email: "sac@varejototal.com", telefone: "(21) 98888-4444" },
+    },
+     {
+        nomeEmpresa: "Clínica Bem Viver",
+        cnpj: "34.567.890/0001-12",
+        setor: "Saúde",
+        status: "Ativa",
+        riscoMedio: "Médio",
+        irs: 71,
+        endereco: { rua: "Av. Saúde, 101", bairro: "Jardins", cidade: "Belo Horizonte, MG", cep: "30100-000" },
+        contato: { email: "adm@clinicabemviver.med.br", telefone: "(31) 97777-3333" },
+    },
+];
 
-            const planoExercicio: PlanoExercicio = {
-                ...getRandomItem(PLANOS_EXERCICIO),
-                progresso: getRandomInt(0, 100),
-            };
+const MOCK_FUNCIONARIOS_POOL: { nome: string; cargo: string; setor: string; fitScore: number; risco: RiscoNivel; sono: number; estresse: number; humor: number; energia: number; dataNascimento: string; genero: 'Masculino' | 'Feminino'; peso: number; altura: number; }[] = [
+    // InovaTech
+    { nome: 'Carlos Andrade', cargo: 'Engenheiro de Software Sênior', setor: 'Tecnologia', fitScore: 88, risco: 'Baixo', sono: 7.5, estresse: 25, humor: 5, energia: 5, dataNascimento: '1988-05-20', genero: 'Masculino', peso: 82, altura: 180 },
+    { nome: 'Beatriz Lima', cargo: 'Designer de Produto', setor: 'Tecnologia', fitScore: 92, risco: 'Baixo', sono: 8, estresse: 20, humor: 5, energia: 5, dataNascimento: '1992-11-15', genero: 'Feminino', peso: 65, altura: 168 },
+    { nome: 'Ricardo Souza', cargo: 'Gerente de Projetos', setor: 'Tecnologia', fitScore: 75, risco: 'Médio', sono: 6.5, estresse: 60, humor: 3, energia: 3, dataNascimento: '1985-02-10', genero: 'Masculino', peso: 88, altura: 175 },
+    // Manufatura
+    { nome: 'Fernanda Costa', cargo: 'Operadora de Máquinas', setor: 'Indústria', fitScore: 65, risco: 'Médio', sono: 7, estresse: 55, humor: 4, energia: 4, dataNascimento: '1995-07-30', genero: 'Feminino', peso: 70, altura: 170 },
+    { nome: 'Jorge Martins', cargo: 'Supervisor de Produção', setor: 'Indústria', fitScore: 58, risco: 'Médio', sono: 6, estresse: 70, humor: 3, energia: 3, dataNascimento: '1980-01-25', genero: 'Masculino', peso: 95, altura: 182 },
+    { nome: 'Luiza Pereira', cargo: 'Analista de Qualidade', setor: 'Indústria', fitScore: 72, risco: 'Baixo', sono: 7, estresse: 40, humor: 4, energia: 4, dataNascimento: '1998-09-05', genero: 'Feminino', peso: 68, altura: 165 },
+    // LogiExpress
+    { nome: 'Marcos Almeida', cargo: 'Motorista de Entrega', setor: 'Logística', fitScore: 45, risco: 'Alto', sono: 5.5, estresse: 80, humor: 2, energia: 2, dataNascimento: '1990-03-12', genero: 'Masculino', peso: 85, altura: 178 },
+    { nome: 'Patrícia Rocha', cargo: 'Coordenadora de Logística', setor: 'Logística', fitScore: 52, risco: 'Alto', sono: 6, estresse: 75, humor: 3, energia: 3, dataNascimento: '1987-06-22', genero: 'Feminino', peso: 72, altura: 173 },
+    { nome: 'Thiago Nunes', cargo: 'Assistente de Armazém', setor: 'Logística', fitScore: 61, risco: 'Médio', sono: 6.5, estresse: 65, humor: 4, energia: 4, dataNascimento: '1999-12-01', genero: 'Masculino', peso: 78, altura: 176 },
+    // Varejo Total
+    { nome: 'Vanessa Dias', cargo: 'Vendedora', setor: 'Varejo', fitScore: 80, risco: 'Baixo', sono: 7, estresse: 30, humor: 5, energia: 4, dataNascimento: '1993-04-18', genero: 'Feminino', peso: 62, altura: 169 },
+    // Clínica Bem Viver
+    { nome: 'Dr. Roberto Neves', cargo: 'Médico Clínico', setor: 'Saúde', fitScore: 68, risco: 'Médio', sono: 6.5, estresse: 60, humor: 4, energia: 4, dataNascimento: '1975-10-08', genero: 'Masculino', peso: 90, altura: 185 },
+    { nome: 'Juliana Faria', cargo: 'Enfermeira Chefe', setor: 'Saúde', fitScore: 55, risco: 'Alto', sono: 6, estresse: 75, humor: 3, energia: 3, dataNascimento: '1989-08-14', genero: 'Feminino', peso: 67, altura: 166 },
+];
 
-            const numMetas = getRandomInt(1, 3);
-            const metas: Meta[] = [];
-            for (let k = 0; k < numMetas; k++) {
-                const metaBase = getRandomItem(METAS_BASE);
-                const dataAlvo = new Date();
-                dataAlvo.setDate(dataAlvo.getDate() + getRandomInt(15, 60));
-                metas.push({
-                    id: `m${funcionarioId}-${k}`,
-                    descricao: metaBase.descricao,
-                    status: metaBase.status as MetaStatus,
-                    dataAlvo: dataAlvo.toISOString().split('T')[0],
-                });
-            }
+export const generateMockData = (): { empresas: Empresa[], funcionarios: Funcionario[] } => {
+    const empresas: Empresa[] = [];
+    const funcionarios: Funcionario[] = [];
 
-            mockFuncionarios.push({
-                id: `f${funcionarioId++}`,
-                nome,
-                email: `${toKebabCase(nome)}@${toKebabCase(empresaBase.nomeEmpresa)}.com.br`,
-                cargo: getRandomItem(cargos),
-                setor,
-                empresaId: empresaBase.empresaId,
+    MOCK_EMPRESAS.forEach((empresaBase, index) => {
+        const empresaId = `emp-${index + 1}`;
+        const funcionariosDaEmpresa: Funcionario[] = [];
+        const pool = MOCK_FUNCIONARIOS_POOL.filter(p => p.setor === empresaBase.setor);
+
+        pool.forEach((funcBase, funcIndex) => {
+            const id = `func-${empresaId}-${funcIndex + 1}`;
+            const email = `${funcBase.nome.split(' ')[0].toLowerCase()}.${funcBase.nome.split(' ')[1].toLowerCase()}@${empresaBase.nomeEmpresa.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/gi, '')}.com`;
+            const funcionario: Funcionario = {
+                id,
+                nome: funcBase.nome,
+                email,
+                cargo: funcBase.cargo,
+                setor: empresaBase.setor,
+                empresaId,
                 empresaNome: empresaBase.nomeEmpresa,
-                fitScore,
-                risco,
-                avatarUrl: `https://i.pravatar.cc/150?u=${`f${funcionarioId}`}`,
-                dataAdmissao: new Date(2022 - getRandomInt(0, 3), getRandomInt(0, 11), getRandomInt(1, 28)).toISOString().split('T')[0],
-                historicoFitScore,
-                metricas: {
-                    sono: parseFloat((getRandomInt(4, 9) + Math.random()).toFixed(1)),
-                    estresse: getRandomInt(10, 80),
-                    humor: getRandomInt(1, 5),
-                    energia: getRandomInt(1, 5),
-                },
-                planoExercicio,
-                metas,
-            });
-        }
-    });
-};
-
-const generateEmpresas = () => {
-    if (mockEmpresas.length > 0) return;
-    generateFuncionarios();
-
-    mockEmpresas = EMPRESAS_BASE.map(empresaBase => {
-        const funcionariosDaEmpresa = mockFuncionarios.filter(f => f.empresaId === empresaBase.empresaId);
-        const totalFuncionarios = funcionariosDaEmpresa.length;
-        if (totalFuncionarios === 0) {
-             return {
-                ...empresaBase,
-                funcionariosAtivos: 0,
-                mediaFitScore: 0,
-                taxaEngajamento: 0,
-                alertasRisco: 0,
-                irsHistory: generateIrsHistory(empresaBase.irs),
+                avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
+                dataAdmissao: "2022-08-15",
+                fitScore: funcBase.fitScore,
+                risco: funcBase.risco,
+                historicoFitScore: generateHistoricoFitScore(funcBase.fitScore),
+                metricas: { sono: funcBase.sono, estresse: funcBase.estresse, humor: funcBase.humor, energia: funcBase.energia },
+                planoExercicio: { nome: 'Caminhada Diária', meta: '10.000 passos/dia', frequencia: 'Diária', progresso: Math.floor(Math.random() * 101) },
+                metas: [
+                    { id: 'm-1', descricao: 'Atingir 10.000 passos por dia', dataAlvo: '2024-12-31', status: 'Em Progresso' }
+                ],
+                dataNascimento: funcBase.dataNascimento,
+                genero: funcBase.genero,
+                peso: funcBase.peso,
+                altura: funcBase.altura,
             };
-        }
-        
-        const mediaFitScore = Math.round(funcionariosDaEmpresa.reduce((sum, f) => sum + f.fitScore, 0) / totalFuncionarios);
-        const taxaEngajamento = getRandomInt(70, 95);
-        const alertasRisco = funcionariosDaEmpresa.filter(f => f.risco === 'Alto').length;
+            funcionariosDaEmpresa.push(funcionario);
+            funcionarios.push(funcionario);
+        });
 
-        return {
+        const fitScoreMedio = Math.round(funcionariosDaEmpresa.reduce((acc, f) => acc + f.fitScore, 0) / funcionariosDaEmpresa.length) || 0;
+
+        empresas.push({
             ...empresaBase,
-            funcionariosAtivos: totalFuncionarios,
-            mediaFitScore,
-            taxaEngajamento,
-            alertasRisco,
-            irsHistory: generateIrsHistory(empresaBase.irs),
-        };
+            empresaId,
+            totalFuncionarios: funcionariosDaEmpresa.length,
+            fitScoreMedio,
+        });
     });
+
+    return { empresas, funcionarios };
 };
 
-generateEmpresas();
-
-export const generateMockEmpresas = (): Empresa[] => {
-    return mockEmpresas;
-};
-
-export const generateMockFuncionarios = (): Funcionario[] => {
-    return mockFuncionarios;
-};
-
-export const getFuncionarioById = (id: string): Funcionario | undefined => {
-    return mockFuncionarios.find(f => f.id === id);
-}
 
 export const generateMockAuditLogs = (): AuditLog[] => {
+    const actions = [
+        "visualizou_dashboard", "editou_perfil_funcionario", "adicionou_empresa",
+        "removeu_funcionario", "gerou_relatorio", "alterou_status_empresa"
+    ];
+
+    const users = [
+        { id: 'user-admin-1', name: 'Alice Admin' },
+        { id: 'user-rh-2', name: 'Bruno RH' }
+    ];
+
+    const { empresas, funcionarios } = generateMockData();
+
+    const targets = [
+        ...empresas.map(e => ({ type: 'empresa' as const, id: e.empresaId, name: e.nomeEmpresa })),
+        ...funcionarios.map(f => ({ type: 'funcionario' as const, id: f.id, name: f.nome }))
+    ];
+
     const logs: AuditLog[] = [];
-    const actions = ['criou', 'editou', 'visualizou', 'exportou', 'excluiu'];
-    const targetTypes: ('empresa' | 'funcionário' | 'relatório')[] = ['empresa', 'funcionário', 'relatório'];
 
     for (let i = 0; i < 50; i++) {
-        const targetType = getRandomItem(targetTypes);
-        const targetName = targetType === 'empresa' 
-            ? getRandomItem(mockEmpresas).nomeEmpresa 
-            : targetType === 'funcionário' 
-            ? getRandomItem(mockFuncionarios).nome 
-            : `Relatório de Engajamento Q${getRandomInt(1,4)}`;
-
         const timestamp = new Date();
-        timestamp.setHours(timestamp.getHours() - i * getRandomInt(1, 5));
-        
+        timestamp.setDate(timestamp.getDate() - Math.floor(Math.random() * 30));
+        timestamp.setHours(timestamp.getHours() - Math.floor(Math.random() * 24));
+
         logs.push({
-            id: `log${i}`,
-            user: {
-                name: i % 5 === 0 ? 'Admin FitBusiness' : `rh@${toKebabCase(getRandomItem(mockEmpresas).nomeEmpresa)}.com`,
-                role: i % 5 === 0 ? 'superadmin' : 'Gerente RH',
-            },
-            action: getRandomItem(actions),
-            target: {
-                type: targetType,
-                name: targetName,
-            },
+            id: `log-${i + 1}`,
             timestamp: timestamp.toISOString(),
+            user: users[Math.floor(Math.random() * users.length)],
+            action: actions[Math.floor(Math.random() * actions.length)],
+            target: targets[Math.floor(Math.random() * targets.length)],
         });
     }
-    return logs;
-};
 
-
-export const generateFitScoreTimeline = () => {
-    const data = [];
-    let currentScore = getRandomInt(70, 80);
-    for (let i = 11; i >= 0; i--) {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        data.push({
-            date: date.toLocaleString('default', { month: 'short', year: '2-digit' }),
-            fitScore: currentScore
-        });
-        currentScore = getRandomInt(Math.max(60, currentScore - 5), Math.min(90, currentScore + 5));
-    }
-    return data;
-};
-
-export const generateEngagementByNivel = () => [
-    { name: 'Operacional', value: 400 },
-    { name: 'Tático', value: 300 },
-    { name: 'Estratégico', value: 300 },
-    { name: 'Liderança', value: 200 },
-];
-
-export const generateCheckinsBySetor = () => SETORES.map(setor => ({
-    name: setor,
-    checkins: getRandomInt(60, 95)
-}));
-
-export const generateIrsTimeline = () => {
-    const data = [];
-    let currentIrs = getRandomInt(65, 75);
-    for (let i = 5; i >= 0; i--) {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        data.push({
-            date: date.toLocaleString('default', { month: 'short' }),
-            irs: currentIrs
-        });
-        currentIrs = getRandomInt(Math.max(50, currentIrs - 8), Math.min(90, currentIrs + 8));
-    }
-    return data;
-};
-
-export const generateFitScorePrediction = () => {
-    const data = [];
-    const today = new Date();
-    let lastReal = getRandomInt(73, 78);
-
-    // Historical data
-    for (let i = 3; i >= 1; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - (i * 7));
-        data.push({
-            date: `Semana ${4-i}`,
-            real: getRandomInt(lastReal - 3, lastReal + 3),
-            previsto: null
-        });
-    }
-    
-    data.push({ date: 'Esta Semana', real: lastReal, previsto: lastReal });
-
-    // Prediction data
-    let lastPredicted = lastReal;
-    for (let i = 1; i <= 4; i++) {
-        lastPredicted = getRandomInt(lastPredicted - 3, lastPredicted + 2);
-        data.push({
-            date: `Semana +${i}`,
-            real: null,
-            previsto: lastPredicted
-        });
-    }
-    return data;
-};
-
-export const generateOtherPredictions = () => {
-    const engagementTrend: 'up' | 'down' = Math.random() > 0.5 ? 'up' : 'down';
-    return {
-        engagementRate: {
-            value: getRandomInt(70, 95),
-            trend: engagementTrend,
-        },
-        stressProbability: getRandomInt(10, 40),
-        risingRiskSector: getRandomItem(SETORES),
-    };
+    return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };

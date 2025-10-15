@@ -1,40 +1,40 @@
+
 import React, { useMemo, useState } from 'react';
 import { Edit, X, Mail, Briefcase, Calendar, BarChart2, ShieldAlert, Target, Flag, Plus, Trash2 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
-import { Funcionario, Meta, MetaStatus } from '../../types';
-import { useAuth } from '../../hooks/useAuth.tsx';
-import { useTheme } from '../../hooks/useTheme';
-import Card from '../ui/Card';
-import MetaModal from './MetaModal';
+import { ResponsiveContainer, LineChart as RechartsLineChart, Line as RechartsLine, CartesianGrid as RechartsCartesianGrid, XAxis as RechartsXAxis, YAxis as RechartsYAxis, Tooltip as RechartsTooltip, RadarChart as RechartsRadarChart, PolarGrid as RechartsPolarGrid, PolarAngleAxis as RechartsPolarAngleAxis, Radar as RechartsRadar } from 'recharts';
+// FIX: Add .ts extension
+import { Funcionario, Meta, MetaStatus } from '../../types.ts';
+import { useTheme } from '../../hooks/useTheme.tsx';
+import Card from '../ui/Card.tsx';
+import MetaModal from './MetaModal.tsx';
+// FIX: Add .tsx extension
+import { useData } from '../../hooks/useData.tsx';
+import ConfirmationModal from '../ui/ConfirmationModal.tsx';
 
 const GoalStatusBadge: React.FC<{ status: MetaStatus }> = ({ status }) => {
   const statusClasses = {
     'Não Iniciada': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-    'Em Progresso': 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
-    'Concluída': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+    'Em Progresso': 'bg-blue-100 text-blue-800 dark:bg-blue-900/70 dark:text-blue-200',
+    'Concluída': 'bg-green-100 text-green-800 dark:bg-green-900/70 dark:text-green-200',
   };
   return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClasses[status]}`}>{status}</span>;
 };
 
-
-// This component was extracted from pages/EmpresasMonitoradas.tsx for better code organization.
 const FuncionarioDetalheModal: React.FC<{
     funcionario: Funcionario | null;
     onClose: () => void;
-    setAllFuncionarios: React.Dispatch<React.SetStateAction<Funcionario[]>>;
-}> = ({ funcionario, onClose, setAllFuncionarios }) => {
-    const { user } = useAuth();
+}> = ({ funcionario, onClose }) => {
     const { theme } = useTheme();
-    const tickColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
+    const { updateFuncionario } = useData();
+    const tickColor = theme === 'dark' ? '#9CA3AF' : '#4B5563';
     const tooltipBackgroundColor = theme === 'dark' ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)';
     const tooltipBorderColor = theme === 'dark' ? '#374151' : '#E5E7EB';
 
     const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
     const [metaToEdit, setMetaToEdit] = useState<Meta | null>(null);
-    
-    if (!funcionario) return null;
+    const [metaToDelete, setMetaToDelete] = useState<string | null>(null);
 
-    const canEdit = user?.papel === 'superadmin' || user?.papel === 'Gerente RH';
+    if (!funcionario) return null;
 
     const { nome, cargo, email, empresaNome, avatarUrl, dataAdmissao, fitScore, risco, historicoFitScore, metricas, planoExercicio, metas } = funcionario;
 
@@ -53,21 +53,17 @@ const FuncionarioDetalheModal: React.FC<{
             ? metas.map(m => m.id === metaToEdit.id ? { ...m, ...metaData } : m)
             : [...metas, { ...metaData, id: `m-${Date.now()}` }];
         
-        const updatedFuncionario = { ...funcionario, metas: updatedMetas };
-        setAllFuncionarios(prev => prev.map(f => f.id === funcionario.id ? updatedFuncionario : f));
+        updateFuncionario({ ...funcionario, metas: updatedMetas });
         setIsMetaModalOpen(false);
     };
 
-    const handleDeleteMeta = (metaId: string) => {
-        if (window.confirm("Tem certeza que deseja excluir esta meta?")) {
-            const updatedMetas = metas.filter(m => m.id !== metaId);
-            const updatedFuncionario = { ...funcionario, metas: updatedMetas };
-            setAllFuncionarios(prev => prev.map(f => f.id === funcionario.id ? updatedFuncionario : f));
-        }
+    const handleDeleteMeta = () => {
+        if (!metaToDelete) return;
+        const updatedMetas = metas.filter(m => m.id !== metaToDelete);
+        updateFuncionario({ ...funcionario, metas: updatedMetas });
+        setMetaToDelete(null);
     };
 
-
-    // useMemo helps prevent re-calculating on every render if metricas object hasn't changed.
     const metricasData = useMemo(() => [
         { subject: 'Sono', value: (metricas.sono / 8) * 100 },
         { subject: 'Estresse', value: 100 - metricas.estresse },
@@ -91,15 +87,13 @@ const FuncionarioDetalheModal: React.FC<{
                         <img src={avatarUrl} alt={nome} className="w-12 h-12 rounded-full" />
                         <div>
                              <h3 id="funcionario-detalhe-title" className="text-xl font-bold text-gray-800 dark:text-white">{nome}</h3>
-                             <p className="text-sm text-fit-gray">{cargo}</p>
+                             <p className="text-sm text-gray-500 dark:text-gray-400">{cargo}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        {canEdit && (
-                            <button className="flex items-center bg-fit-dark-blue text-white px-3 py-1.5 rounded-lg text-sm">
-                                <Edit size={14} className="mr-2"/> Editar
-                            </button>
-                        )}
+                        <button className="btn btn-primary btn-sm">
+                            <Edit size={14} className="mr-2"/> Editar
+                        </button>
                         <button onClick={onClose} aria-label="Fechar modal" className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
                             <X size={24} />
                         </button>
@@ -111,10 +105,10 @@ const FuncionarioDetalheModal: React.FC<{
                     {/* Personal Info & Metrics */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-1 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg space-y-3">
-                             <h4 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 mb-2">Informações</h4>
-                             <p className="flex items-center text-sm"><Briefcase size={14} className="mr-2 text-fit-gray"/> <strong>Empresa:</strong><span className="ml-2">{empresaNome}</span></p>
-                             <p className="flex items-center text-sm"><Mail size={14} className="mr-2 text-fit-gray"/> <strong>Email:</strong><span className="ml-2">{email}</span></p>
-                             <p className="flex items-center text-sm"><Calendar size={14} className="mr-2 text-fit-gray"/> <strong>Admissão:</strong><span className="ml-2">{new Date(dataAdmissao).toLocaleDateString('pt-BR')}</span></p>
+                             <h4 className="font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">Informações</h4>
+                             <p className="flex items-start text-sm text-gray-600 dark:text-gray-300"><Briefcase size={14} className="mr-2 mt-0.5 text-gray-400 dark:text-gray-500 flex-shrink-0"/> <strong>Empresa:</strong><span className="ml-2">{empresaNome}</span></p>
+                             <p className="flex items-start text-sm text-gray-600 dark:text-gray-300"><Mail size={14} className="mr-2 mt-0.5 text-gray-400 dark:text-gray-500 flex-shrink-0"/> <strong>Email:</strong><span className="ml-2 break-all">{email}</span></p>
+                             <p className="flex items-start text-sm text-gray-600 dark:text-gray-300"><Calendar size={14} className="mr-2 mt-0.5 text-gray-400 dark:text-gray-500 flex-shrink-0"/> <strong>Admissão:</strong><span className="ml-2">{new Date(dataAdmissao).toLocaleDateString('pt-BR')}</span></p>
                         </div>
                          <div className="lg:col-span-2 grid grid-cols-2 gap-4">
                             <Card title="FitScore Atual" value={fitScore} icon={<BarChart2 size={20} className="text-fit-dark-blue"/>} />
@@ -125,13 +119,13 @@ const FuncionarioDetalheModal: React.FC<{
                     {/* Exercise Plan */}
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
                         <h4 className="font-semibold text-gray-800 dark:text-white mb-3 flex items-center"><Target size={18} className="mr-2 text-fit-dark-blue"/> Plano de Atividades</h4>
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-gray-600 dark:text-gray-300">
                              <p className="text-sm"><strong>Plano:</strong> {planoExercicio.nome} ({planoExercicio.frequencia})</p>
                              <p className="text-sm"><strong>Meta Semanal:</strong> {planoExercicio.meta}</p>
                              <div>
                                 <div className="flex justify-between text-sm mb-1">
                                     <span>Progresso</span>
-                                    <span>{planoExercicio.progresso}%</span>
+                                    <span className="font-medium">{planoExercicio.progresso}%</span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                                     <div className="bg-fit-green h-2.5 rounded-full" style={{ width: `${planoExercicio.progresso}%` }}></div>
@@ -146,11 +140,9 @@ const FuncionarioDetalheModal: React.FC<{
                             <h4 className="font-semibold text-gray-800 dark:text-white flex items-center">
                                 <Flag size={18} className="mr-2 text-fit-dark-blue" /> Metas Individuais
                             </h4>
-                             {canEdit && (
-                                <button onClick={handleOpenAddMetaModal} className="flex items-center bg-fit-dark-blue text-white px-3 py-1.5 rounded-lg hover:bg-opacity-90 transition-colors text-sm">
-                                    <Plus size={14} className="mr-2" /> Adicionar Meta
-                                </button>
-                             )}
+                            <button onClick={handleOpenAddMetaModal} className="btn btn-primary btn-sm">
+                                <Plus size={14} className="mr-2" /> Adicionar Meta
+                            </button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -159,7 +151,7 @@ const FuncionarioDetalheModal: React.FC<{
                                         <th scope="col" className="px-4 py-2">Descrição da Meta</th>
                                         <th scope="col" className="px-4 py-2">Data Alvo</th>
                                         <th scope="col" className="px-4 py-2">Status</th>
-                                        {canEdit && <th scope="col" className="px-4 py-2 text-right">Ações</th>}
+                                        <th scope="col" className="px-4 py-2 text-right">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -168,14 +160,12 @@ const FuncionarioDetalheModal: React.FC<{
                                             <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{meta.descricao}</td>
                                             <td className="px-4 py-2">{new Date(meta.dataAlvo).toLocaleDateString('pt-BR')}</td>
                                             <td className="px-4 py-2"><GoalStatusBadge status={meta.status} /></td>
-                                            {canEdit && (
-                                                <td className="px-4 py-2 text-right">
-                                                    <div className="flex justify-end space-x-4">
-                                                        <button onClick={() => handleOpenEditMetaModal(meta)} className="text-fit-gray hover:text-fit-dark-blue"><Edit size={16} /></button>
-                                                        <button onClick={() => handleDeleteMeta(meta.id)} className="text-fit-gray hover:text-fit-red"><Trash2 size={16} /></button>
-                                                    </div>
-                                                </td>
-                                            )}
+                                            <td className="px-4 py-2 text-right">
+                                                <div className="flex justify-end space-x-2">
+                                                    <button onClick={() => handleOpenEditMetaModal(meta)} className="btn-icon" aria-label="Editar meta"><Edit size={16} /></button>
+                                                    <button onClick={() => setMetaToDelete(meta.id)} className="btn-icon btn-icon-danger" aria-label="Excluir meta"><Trash2 size={16} /></button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -194,23 +184,23 @@ const FuncionarioDetalheModal: React.FC<{
                                 </select>
                              </div>
                             <ResponsiveContainer width="100%" height={250}>
-                                <LineChart data={historicoFitScore}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
-                                    <XAxis dataKey="date" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR', { month: 'short' })} tick={{ fontSize: 10, fill: tickColor }} />
-                                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: tickColor }}/>
-                                    <Tooltip contentStyle={{ backgroundColor: tooltipBackgroundColor, backdropFilter: 'blur(5px)', border: `1px solid ${tooltipBorderColor}`, borderRadius: '0.75rem' }} />
-                                    <Line type="monotone" dataKey="score" name="FitScore" stroke="#0A2342" strokeWidth={2} dot={false} />
-                                </LineChart>
+                                <RechartsLineChart data={historicoFitScore}>
+                                    <RechartsCartesianGrid strokeDasharray="3 3" opacity={0.2}/>
+                                    <RechartsXAxis dataKey="date" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR', { month: 'short' })} tick={{ fontSize: 10, fill: tickColor }} />
+                                    <RechartsYAxis domain={[0, 100]} tick={{ fontSize: 10, fill: tickColor }}/>
+                                    <RechartsTooltip contentStyle={{ backgroundColor: tooltipBackgroundColor, backdropFilter: 'blur(5px)', border: `1px solid ${tooltipBorderColor}`, borderRadius: '0.75rem' }} />
+                                    <RechartsLine type="monotone" dataKey="score" name="FitScore" stroke="#0A2342" strokeWidth={2} dot={false} />
+                                </RechartsLineChart>
                             </ResponsiveContainer>
                         </div>
                         <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
                             <h4 className="font-semibold text-gray-800 dark:text-white mb-4">Pilares de Bem-estar</h4>
                             <ResponsiveContainer width="100%" height={250}>
-                                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metricasData}>
-                                    <PolarGrid />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: tickColor }} />
-                                    <Radar name={nome} dataKey="value" stroke="#0A2342" fill="#0A2342" fillOpacity={0.6} />
-                                </RadarChart>
+                                 <RechartsRadarChart cx="50%" cy="50%" outerRadius="80%" data={metricasData}>
+                                    <RechartsPolarGrid />
+                                    <RechartsPolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: tickColor }} />
+                                    <RechartsRadar name={nome} dataKey="value" stroke="#0A2342" fill="#0A2342" fillOpacity={0.6} />
+                                </RechartsRadarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
@@ -223,6 +213,13 @@ const FuncionarioDetalheModal: React.FC<{
             onClose={() => setIsMetaModalOpen(false)}
             onSave={handleSaveMeta}
             metaToEdit={metaToEdit}
+        />
+        <ConfirmationModal
+            isOpen={!!metaToDelete}
+            onClose={() => setMetaToDelete(null)}
+            onConfirm={handleDeleteMeta}
+            title="Confirmar Exclusão"
+            message="Tem certeza que deseja excluir esta meta? Esta ação não pode ser desfeita."
         />
         </>
     );

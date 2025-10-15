@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Meta, MetaStatus } from '../../types';
+// FIX: Add .ts extension
+import { Meta, MetaStatus } from '../../types.ts';
 
 interface MetaModalProps {
   isOpen: boolean;
@@ -73,7 +75,7 @@ const MetaModal: React.FC<MetaModalProps> = ({ isOpen, onClose, onSave, metaToEd
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
+                        <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descrição</label>
                         <textarea
                             id="descricao"
                             name="descricao"
@@ -86,7 +88,7 @@ const MetaModal: React.FC<MetaModalProps> = ({ isOpen, onClose, onSave, metaToEd
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="dataAlvo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data Alvo</label>
+                            <label htmlFor="dataAlvo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Alvo</label>
                             <input
                                 type="date"
                                 id="dataAlvo"
@@ -96,7 +98,7 @@ const MetaModal: React.FC<MetaModalProps> = ({ isOpen, onClose, onSave, metaToEd
                             />
                         </div>
                         <div>
-                            <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                            <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                             <select
                                 id="status"
                                 name="status"
@@ -108,10 +110,10 @@ const MetaModal: React.FC<MetaModalProps> = ({ isOpen, onClose, onSave, metaToEd
                         </div>
                     </div>
                     <div className="mt-6 flex justify-end space-x-3 pt-4 border-t dark:border-gray-700">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                        <button type="button" onClick={onClose} className="btn btn-secondary">
                             Cancelar
                         </button>
-                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-fit-dark-blue border border-transparent rounded-md shadow-sm hover:bg-opacity-90 focus:outline-none">
+                        <button type="submit" className="btn btn-primary">
                             Salvar Meta
                         </button>
                     </div>

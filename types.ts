@@ -1,101 +1,98 @@
-import { ReactNode } from 'react';
 
-export type Papel = 'Gerente RH' | 'superadmin' | 'Funcionário';
+// FIX: Removed self-referential import that was causing declaration conflicts.
 
-export interface AuditLog {
-  id: string;
-  user: {
-    name: string;
-    role: Papel;
-  };
-  action: string;
-  target: {
-    type: 'empresa' | 'funcionário' | 'relatório';
-    name: string;
-  };
-  timestamp: string;
-}
-
-export interface PlanoExercicio {
-  nome: string;
-  meta: string;
-  progresso: number; // Percentage from 0 to 100
-  frequencia: string;
-}
-
+export type RiscoNivel = 'Alto' | 'Médio' | 'Baixo';
+export type EmpresaStatus = 'Ativa' | 'Inativa';
 export type MetaStatus = 'Não Iniciada' | 'Em Progresso' | 'Concluída';
 
-export interface Meta {
-  id: string;
-  descricao: string;
-  dataAlvo: string;
-  status: MetaStatus;
-}
-
-export interface Funcionario {
-  id: string;
-  nome: string;
-  email: string;
-  cargo: string;
-  setor: Setor;
-  empresaId: string;
-  empresaNome: string;
-  fitScore: number;
-  risco: RiscoNivel;
-  avatarUrl: string;
-  dataAdmissao: string;
-  historicoFitScore: { date: string; score: number }[];
-  metricas: {
-    sono: number;
-    estresse: number;
-    humor: number;
-    energia: number;
-  };
-  planoExercicio: PlanoExercicio;
-  metas: Meta[];
-}
-
 export interface Endereco {
-  rua: string;
-  bairro: string;
-  cidade: string;
-  cep: string;
+    rua: string;
+    bairro: string;
+    cidade: string;
+    cep: string;
 }
 
 export interface Contato {
-  telefone: string;
-  email: string;
+    email: string;
+    telefone: string;
+}
+
+export interface Meta {
+    id: string;
+    descricao: string;
+    dataAlvo: string;
+    status: MetaStatus;
+}
+
+export interface PlanoExercicio {
+    nome: string;
+    meta: string;
+    frequencia: string;
+    progresso: number;
+}
+
+export interface Metricas {
+    sono: number; // horas
+    estresse: number; // percentual
+    humor: number; // 1-5
+    energia: number; // 1-5
+}
+
+export interface HistoricoFitScore {
+    date: string;
+    score: number;
+}
+
+export interface Funcionario {
+    id: string;
+    nome: string;
+    email: string;
+    cargo: string;
+    setor: string;
+    empresaId: string;
+    empresaNome: string;
+    avatarUrl: string;
+    dataAdmissao: string;
+    fitScore: number;
+    risco: RiscoNivel;
+    historicoFitScore: HistoricoFitScore[];
+    metricas: Metricas;
+    planoExercicio: PlanoExercicio;
+    metas: Meta[];
+    // Optional fields for detailed profiles
+    dataNascimento?: string;
+    genero?: 'Masculino' | 'Feminino' | 'Outro';
+    peso?: number; // in kg
+    altura?: number; // in cm
 }
 
 export interface Empresa {
-  empresaId: string;
-  nomeEmpresa: string;
-  status: 'Ativa' | 'Inativa';
-  irs: number; // Índice de Risco de Saúde
-  funcionariosAtivos: number;
-  mediaFitScore: number;
-  taxaEngajamento: number;
-  alertasRisco: number;
-  website?: string;
-  irsHistory?: { date: string; irs: number }[];
-  // New detailed fields
-  cnpj: string;
-  setor: Setor;
-  cultura: string;
-  dataCriacao: string;
-  endereco: Endereco;
-  contato: Contato;
+    empresaId: string;
+    nomeEmpresa: string;
+    cnpj: string;
+    setor: string;
+    status: EmpresaStatus;
+    totalFuncionarios: number;
+    fitScoreMedio: number;
+    riscoMedio: RiscoNivel;
+    irs: number; // Índice de Risco de Saúde
+    endereco: Endereco;
+    contato: Contato;
+    cultura?: string;
+    dataCriacao?: string;
 }
 
-export type RiscoNivel = 'Alto' | 'Médio' | 'Baixo';
-
-export type Setor = 'Tecnologia' | 'Indústria' | 'Logística' | 'Varejo' | 'Saúde';
-
-export interface User {
+export interface AuditLog {
   id: string;
-  nome: string;
-  email: string;
-  papel: Papel;
-  avatarUrl: string;
-  empresaId?: string; // Optional: superadmin might not have one
+  timestamp: string;
+  user: {
+    id: string;
+    name: string;
+  };
+  action: string;
+  target: {
+    type: 'empresa' | 'funcionario' | 'relatorio';
+    id: string;
+    name: string;
+  };
 }

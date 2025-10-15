@@ -1,13 +1,11 @@
 import React from 'react';
 import { UploadCloud, Zap, Puzzle, Users, Lock } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth.tsx';
-import AccessDenied from '../components/ui/AccessDenied';
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string; tag?: string }> = ({ icon, title, description, tag }) => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 text-center flex flex-col items-center">
         <div className="mb-4 text-fit-dark-blue dark:text-fit-orange">{icon}</div>
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{title}</h3>
-        <p className="text-sm text-fit-gray mt-2 flex-grow">{description}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 flex-grow">{description}</p>
         {tag && (
             <span className="mt-4 text-xs font-bold text-white bg-fit-orange px-3 py-1 rounded-full">{tag}</span>
         )}
@@ -15,17 +13,11 @@ const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description:
 );
 
 const Integracoes: React.FC = () => {
-    const { user } = useAuth();
-
-    if (user?.papel !== 'superadmin') {
-        return <AccessDenied />;
-    }
-
     return (
         <div className="space-y-8">
             <div className="text-center">
                 <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Central de Integrações e Onboarding</h2>
-                <p className="mt-2 text-lg text-fit-gray max-w-2xl mx-auto">
+                <p className="mt-2 text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
                     Conecte o FitBusiness com suas ferramentas, importe dados com facilidade e explore nossas funcionalidades premium para levar a gestão de bem-estar a um novo nível.
                 </p>
             </div>

@@ -1,15 +1,14 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, Users, Activity, CheckCircle, ArrowLeft, ArrowRight, Upload, X } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth.tsx';
-import AccessDenied from '../components/ui/AccessDenied';
-import { Empresa, Funcionario, RiscoNivel, Setor } from '../types';
-import BulkImportModal from '../components/ui/BulkImportModal';
+// FIX: Add .ts extension
+import { Empresa, Funcionario } from '../types.ts';
+import BulkImportModal from '../components/ui/BulkImportModal.tsx';
+// FIX: Add .tsx extension
+import { useData } from '../hooks/useData.tsx';
+import { formatCNPJ, formatCEP, formatPhone } from '../lib/utils.ts';
 
-// MASKING UTILITIES
-const formatCNPJ = (value: string) => value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1/$2').replace(/(\d{4})(\d)/, '$1-$2').slice(0, 18);
-const formatCEP = (value: string) => value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
-const formatPhone = (value: string) => value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 15);
 
 const Stepper: React.FC<{ currentStep: number }> = ({ currentStep }) => {
     const steps = [
@@ -25,8 +24,11 @@ const Stepper: React.FC<{ currentStep: number }> = ({ currentStep }) => {
                     <li key={step.title}>
                         <div className={`flex items-center ${index < steps.length - 1 ? 'w-40 sm:w-64' : ''}`}>
                             <div className="flex items-center text-sm font-medium">
-                                <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${ currentStep > step.num ? 'bg-fit-green' : currentStep === step.num ? 'bg-fit-dark-blue' : 'bg-gray-300 dark:bg-gray-600' }`}>
-                                    {currentStep > step.num ? <CheckCircle className="h-6 w-6 text-white" /> : <span className="text-white">{step.icon}</span>}
+                                <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors ${ currentStep > step.num ? 'bg-fit-green' : currentStep === step.num ? 'bg-fit-dark-blue' : 'bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500' }`}>
+                                    {currentStep > step.num 
+                                      ? <CheckCircle className="h-6 w-6 text-white" /> 
+                                      : <span className={currentStep === step.num ? 'text-white' : 'text-gray-500 dark:text-gray-400'}>{step.icon}</span>
+                                    }
                                 </span>
                                 <span className="ml-3 hidden sm:block text-gray-700 dark:text-gray-300">{step.title}</span>
                             </div>
@@ -81,7 +83,7 @@ const Step1Empresa: React.FC<{ onNext: (data: Partial<Empresa>) => void }> = ({ 
         <div className="space-y-4">
             <input name="nomeEmpresa" onChange={handleChange} placeholder="Nome da Empresa" required />
             <input name="cnpj" value={formData.cnpj} onChange={handleChange} placeholder="CNPJ" required />
-            <h4 className="font-semibold pt-2 border-t dark:border-gray-600">Endereço</h4>
+            <h4 className="font-semibold pt-2 border-t dark:border-gray-600 text-gray-800 dark:text-gray-200">Endereço</h4>
             <input name="endereco.rua" onChange={handleChange} placeholder="Rua e Número" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input name="endereco.bairro" onChange={handleChange} placeholder="Bairro" />
@@ -89,7 +91,7 @@ const Step1Empresa: React.FC<{ onNext: (data: Partial<Empresa>) => void }> = ({ 
                 <input name="endereco.cep" value={formData.endereco?.cep} onChange={handleChange} placeholder="CEP" />
             </div>
             <div className="flex justify-end pt-6">
-                <button onClick={() => onNext(formData)} className="bg-fit-dark-blue text-white px-6 py-2 rounded-lg flex items-center hover:bg-opacity-90 transition-colors">
+                <button onClick={() => onNext(formData)} className="btn btn-primary">
                     Avançar <ArrowRight size={16} className="ml-2"/>
                 </button>
             </div>
@@ -112,7 +114,6 @@ const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => vo
     };
     
     const handleImportComplete = (importedFuncionarios: Partial<Funcionario>[]) => {
-        // Replace manually added rows with imported data for simplicity
         setEmployees(importedFuncionarios);
         setIsImportModalOpen(false);
     };
@@ -121,10 +122,10 @@ const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => vo
         <>
         <div className="space-y-6">
             <div className="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <p>Importe um arquivo CSV ou adicione os funcionários manualmente abaixo.</p>
+                <p className="text-gray-600 dark:text-gray-300">Importe um arquivo CSV ou adicione os funcionários manualmente abaixo.</p>
                 <button 
                     onClick={() => setIsImportModalOpen(true)}
-                    className="mt-2 bg-white dark:bg-gray-800 text-fit-dark-blue px-4 py-2 rounded-lg border dark:border-gray-600 flex items-center mx-auto hover:bg-gray-50 dark:hover:bg-gray-600"
+                    className="btn btn-secondary mt-2"
                 >
                     <Upload size={16} className="mr-2"/> Importar via CSV
                 </button>
@@ -135,16 +136,16 @@ const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => vo
                         <input value={emp.nome} onChange={e => handleInputChange(index, 'nome', e.target.value)} placeholder="Nome do Funcionário" />
                         <input value={emp.email} onChange={e => handleInputChange(index, 'email', e.target.value)} placeholder="Email" />
                         <input value={emp.cargo} onChange={e => handleInputChange(index, 'cargo', e.target.value)} placeholder="Cargo" />
-                        <button onClick={() => removeRow(index)} className="text-red-500 justify-self-end hover:text-red-700 transition-colors"><X size={18}/></button>
+                        <button onClick={() => removeRow(index)} className="btn-icon btn-icon-danger justify-self-end"><X size={18}/></button>
                     </div>
                 ))}
             </div>
-            <button onClick={addRow} className="text-sm text-fit-dark-blue font-semibold hover:underline">+ Adicionar Linha</button>
+            <button onClick={addRow} className="btn-link">+ Adicionar Linha</button>
             <div className="flex justify-between pt-6">
-                <button onClick={onBack} className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg flex items-center hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors">
+                <button onClick={onBack} className="btn btn-secondary">
                     <ArrowLeft size={16} className="mr-2"/> Voltar
                 </button>
-                <button onClick={() => onNext(employees)} className="bg-fit-dark-blue text-white px-6 py-2 rounded-lg flex items-center hover:bg-opacity-90 transition-colors">
+                <button onClick={() => onNext(employees)} className="btn btn-primary">
                     Avançar <ArrowRight size={16} className="ml-2"/>
                 </button>
             </div>
@@ -160,29 +161,29 @@ const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => vo
 
 // Step 3: Program Configuration
 const Step3Configuracao: React.FC<{ onComplete: (data: any) => void; onBack: () => void; }> = ({ onComplete, onBack }) => {
-    const checkboxClass = "h-4 w-4 rounded border-gray-300 text-fit-dark-blue focus:ring-fit-dark-blue dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-fit-orange";
+    const checkboxClass = "h-4 w-4 rounded border-gray-300 text-fit-dark-blue focus:ring-2 focus:ring-fit-dark-blue dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-2 dark:focus:ring-fit-orange";
     return (
         <div className="space-y-6 text-center">
-            <p className="text-fit-gray">Selecione os programas e configure os parâmetros iniciais de monitoramento.</p>
+            <p className="text-gray-500 dark:text-gray-400">Selecione os programas e configure os parâmetros iniciais de monitoramento.</p>
             <div className="space-y-3 text-left max-w-sm mx-auto">
-                 <label className="flex items-center space-x-2">
+                 <label className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50">
                     <input type="checkbox" className={checkboxClass} defaultChecked /> 
-                    <span>Ginástica Laboral</span>
+                    <span className="text-gray-700 dark:text-gray-300">Ginástica Laboral</span>
                 </label>
-                 <label className="flex items-center space-x-2">
+                 <label className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50">
                     <input type="checkbox" className={checkboxClass} defaultChecked /> 
-                    <span>Desafio de Passos</span>
+                    <span className="text-gray-700 dark:text-gray-300">Desafio de Passos</span>
                 </label>
-                 <label className="flex items-center space-x-2">
+                 <label className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50">
                     <input type="checkbox" className={checkboxClass} /> 
-                    <span>Trilhas de Treinamento Físico</span>
+                    <span className="text-gray-700 dark:text-gray-300">Trilhas de Treinamento Físico</span>
                 </label>
             </div>
              <div className="flex justify-between pt-6">
-                <button onClick={onBack} className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg flex items-center hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors">
+                <button onClick={onBack} className="btn btn-secondary">
                     <ArrowLeft size={16} className="mr-2"/> Voltar
                 </button>
-                <button onClick={() => onComplete({})} className="bg-fit-dark-blue text-white px-6 py-2 rounded-lg flex items-center hover:bg-opacity-90 transition-colors">
+                <button onClick={() => onComplete({})} className="btn btn-primary">
                     Concluir Onboarding <CheckCircle size={16} className="ml-2"/>
                 </button>
             </div>
@@ -190,20 +191,13 @@ const Step3Configuracao: React.FC<{ onComplete: (data: any) => void; onBack: () 
     );
 };
 
-const Onboarding: React.FC<{
-    setEmpresas: React.Dispatch<React.SetStateAction<Empresa[]>>;
-    setFuncionarios: React.Dispatch<React.SetStateAction<Funcionario[]>>;
-}> = ({ setEmpresas, setFuncionarios }) => {
-    const { user } = useAuth();
+const Onboarding: React.FC = () => {
     const navigate = useNavigate();
+    const { addEmpresa, addFuncionario } = useData();
 
     const [currentStep, setCurrentStep] = useState(1);
     const [companyData, setCompanyData] = useState<Partial<Empresa>>({});
     const [employeesData, setEmployeesData] = useState<Partial<Funcionario>[]>([]);
-
-    if (user?.papel !== 'superadmin') {
-        return <AccessDenied message="Apenas administradores podem realizar o onboarding de novas empresas." />;
-    }
 
     const handleNextStep1 = (data: Partial<Empresa>) => {
         setCompanyData(data);
@@ -216,37 +210,24 @@ const Onboarding: React.FC<{
     };
 
     const handleComplete = (programData: any) => {
-        const newCompanyId = `e${Date.now()}`;
-        const newCompany: Empresa = {
-            ...companyData,
-            empresaId: newCompanyId,
-            nomeEmpresa: companyData.nomeEmpresa || 'Nova Empresa',
-            status: 'Ativa',
-            irs: 75,
-            funcionariosAtivos: employeesData.length,
-            mediaFitScore: 80,
-            taxaEngajamento: 90,
-            alertasRisco: 0,
-        } as Empresa;
+        const newCompany = addEmpresa(companyData, employeesData.length);
 
-        const newFuncionarios: Funcionario[] = employeesData.map((emp, index) => ({
+        const newFuncionarios: Omit<Funcionario, 'id'>[] = employeesData.map((emp) => ({
             ...emp,
-            id: `f${Date.now()}${index}`,
-            empresaId: newCompanyId,
+            empresaId: newCompany.empresaId,
             empresaNome: newCompany.nomeEmpresa,
             fitScore: 78,
-            risco: 'Baixo' as RiscoNivel,
-            avatarUrl: `https://i.pravatar.cc/150?u=f${Date.now()}${index}`,
+            risco: 'Baixo',
+            avatarUrl: `https://i.pravatar.cc/150?u=${emp.email}`,
             dataAdmissao: new Date().toISOString().split('T')[0],
             historicoFitScore: [],
             metricas: { sono: 8, estresse: 30, humor: 5, energia: 4 },
             planoExercicio: { nome: 'Caminhada Diária', meta: '10.000 passos/dia', frequencia: 'Diária', progresso: 0 },
             setor: newCompany.setor,
-            metas: [], // Initialize with empty goals
-        } as Funcionario));
+            metas: [],
+        } as Omit<Funcionario, 'id'>));
         
-        setEmpresas(prev => [newCompany, ...prev]);
-        setFuncionarios(prev => [...newFuncionarios, ...prev]);
+        newFuncionarios.forEach(func => addFuncionario(func));
 
         alert("Onboarding Concluído! Nova empresa adicionada.");
         navigate('/gestao/empresas');
@@ -263,9 +244,9 @@ const Onboarding: React.FC<{
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto">
-            <h1 className="text-center text-3xl font-bold">Onboarding de Nova Empresa</h1>
+            <h1 className="text-center text-3xl font-bold text-gray-800 dark:text-gray-100">Onboarding de Nova Empresa</h1>
             <Stepper currentStep={currentStep} />
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
                 {renderStep()}
             </div>
         </div>

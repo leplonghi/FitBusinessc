@@ -25,7 +25,7 @@ const Card: React.FC<CardProps> = ({ title, value, icon, change, changeType, chi
       )}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-fit-gray">{title}</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
           <p className="text-3xl font-bold text-gray-800 dark:text-white mt-1">{value}</p>
           {change && (
             <p className={`text-xs mt-1 ${changeColor}`}>

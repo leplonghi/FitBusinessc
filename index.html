@@ -19,12 +19,15 @@
             },
             colors: {
               'fit-dark-blue': '#0A2342',
-              'fit-gray': '#8A94A6',
               'fit-light-gray': '#F2F4F8',
               'fit-green': '#48BB78',
               'fit-orange': '#F6AD55',
               'fit-red': '#E53E3E',
             },
+            ringColor: {
+                'fit-dark-blue': '#0A2342',
+                'fit-orange': '#F6AD55',
+            }
           },
         },
       }
@@ -33,7 +36,7 @@
       html {
         color-scheme: light dark;
       }
-      /* Custom form styles for better dark mode compatibility and consistency */
+      /* Improved form styles for better UX and dark mode compatibility */
       input[type="text"],
       input[type="email"],
       input[type="password"],
@@ -44,57 +47,194 @@
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
+        width: 100%;
+        padding: 0.625rem 0.875rem; /* 10px 14px */
+        font-size: 0.875rem; /* 14px */
+        line-height: 1.25rem; /* 20px */
+        border-width: 1px;
+        border-radius: 0.5rem; /* 8px */
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
+
+        /* Light Mode Styles */
         background-color: #fff;
         border-color: #d1d5db; /* gray-300 */
-        border-width: 1px;
-        border-radius: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-        line-height: 1.25rem;
-        color: #111827; /* gray-900 */
-        width: 100%;
-        transition: color, background-color, border-color, box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        color: #1f2937; /* gray-800 */
+      }
+
+      select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.25em 1.25em;
+        padding-right: 2.75rem;
       }
 
       input::placeholder, textarea::placeholder {
-        color: #9ca3af; /* gray-400 */
-      }
-      
-      select {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.5rem center;
-        background-repeat: no-repeat;
-        background-size: 1.5em 1.5em;
-        padding-right: 2.5rem;
+        color: #374151; /* gray-700 - Further improved for maximum accessibility */
       }
 
       input:focus, select:focus, textarea:focus {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-        --tw-ring-offset-shadow: 0 0 #0000;
-        --tw-ring-shadow: 0 0 0 2px var(--tw-ring-color);
-        box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), 0 0 #0000;
-        border-color: var(--tw-ring-color);
-        --tw-ring-color: #0A2342;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(10, 35, 66, 0.1);
+        border-color: #0A2342; /* fit-dark-blue */
       }
 
+      input:disabled, select:disabled, textarea:disabled {
+        background-color: #f3f4f6; /* gray-100 */
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      /* Dark Mode Styles */
       .dark select {
          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
       }
 
-      .dark input, .dark select, .dark textarea {
-        background-color: #374151; /* gray-700 */
+      /* FIX: Increased specificity to override light mode styles correctly */
+      .dark input[type="text"],
+      .dark input[type="email"],
+      .dark input[type="password"],
+      .dark input[type="number"],
+      .dark input[type="date"],
+      .dark select,
+      .dark textarea {
+        background-color: rgba(31, 41, 55, 0.5); /* gray-800 with transparency */
         border-color: #4b5563; /* gray-600 */
-        color: #f9fafb; /* gray-100 */
+        color: #f3f4f6; /* gray-100 */
       }
-
+      
       .dark input::placeholder, .dark textarea::placeholder {
         color: #9ca3af; /* gray-400 */
       }
       
-      .dark input:focus, .dark select:focus, .dark textarea:focus {
-         --tw-ring-color: #F6AD55;
+      /* FIX: Increased specificity for focus states */
+      .dark input[type="text"]:focus,
+      .dark input[type="email"]:focus,
+      .dark input[type="password"]:focus,
+      .dark input[type="number"]:focus,
+      .dark input[type="date"]:focus,
+      .dark select:focus, 
+      .dark textarea:focus {
+        background-color: rgba(55, 65, 81, 0.7); /* gray-700 with transparency */
+        box-shadow: 0 0 0 3px rgba(246, 173, 85, 0.2);
+        border-color: #F6AD55; /* fit-orange */
       }
+
+      /* FIX: Increased specificity for disabled states */
+      .dark input[type="text"]:disabled,
+      .dark input[type="email"]:disabled,
+      .dark input[type="password"]:disabled,
+      .dark input[type="number"]:disabled,
+      .dark input[type="date"]:disabled,
+      .dark select:disabled, 
+      .dark textarea:disabled {
+        background-color: #374151; /* gray-700 */
+      }
+
+      /* FIX: Style dropdown options in dark mode for consistency */
+      .dark select option {
+        background-color: #374151; /* gray-700, a solid dark background */
+        color: #f3f4f6; /* gray-100, light text */
+      }
+      
+      /* Standardized Button System */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        border: 1px solid transparent;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+      }
+
+      .btn-primary {
+        background-color: #0A2342; /* fit-dark-blue */
+        color: white;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background-color: #1a365a;
+      }
+      .dark .btn-primary {
+        background-color: #F6AD55; /* fit-orange */
+        color: #1f2937; /* gray-800 */
+      }
+       .dark .btn-primary:hover:not(:disabled) {
+        background-color: #f7b973;
+      }
+
+      .btn-secondary {
+        background-color: #e5e7eb; /* gray-200 */
+        color: #1f2937; /* gray-800 */
+        border-color: #d1d5db; /* gray-300 */
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background-color: #d1d5db; /* gray-300 */
+      }
+      .dark .btn-secondary {
+        background-color: #374151; /* gray-700 */
+        color: #f3f4f6; /* gray-100 */
+        border-color: #4b5563; /* gray-600 */
+      }
+       .dark .btn-secondary:hover:not(:disabled) {
+        background-color: #4b5563; /* gray-600 */
+      }
+      
+      .btn-danger {
+        background-color: #E53E3E; /* fit-red */
+        color: white;
+      }
+      .btn-danger:hover:not(:disabled) {
+        background-color: #c53030;
+      }
+
+      .btn-icon {
+        padding: 0.5rem;
+        color: #6b7280; /* gray-500 */
+        background-color: transparent;
+      }
+      .btn-icon:hover:not(:disabled) {
+        background-color: #f3f4f6; /* gray-100 */
+        color: #0A2342;
+      }
+      .dark .btn-icon {
+        color: #9ca3af; /* gray-400 */
+      }
+      .dark .btn-icon:hover:not(:disabled) {
+        background-color: #374151; /* gray-700 */
+        color: #f3f4f6;
+      }
+      .btn-icon.btn-icon-danger:hover:not(:disabled) {
+        color: #E53E3E;
+      }
+
+      .btn-link {
+        background: none;
+        border: none;
+        padding: 0;
+        color: #0A2342;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .btn-link:hover:not(:disabled) {
+        text-decoration: underline;
+      }
+      .dark .btn-link {
+        color: #F6AD55;
+      }
+
     </style>
   <script type="importmap">
 {
@@ -105,8 +245,7 @@
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4",
     "recharts": "https://aistudiocdn.com/recharts@^3.2.1",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.545.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.24.0",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.4.0/"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.24.0"
   }
 }
 </script>

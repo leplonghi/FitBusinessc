@@ -160,13 +160,23 @@ const Step2Funcionarios: React.FC<{ onNext: (data: Partial<Funcionario>[]) => vo
 
 // Step 3: Program Configuration
 const Step3Configuracao: React.FC<{ onComplete: (data: any) => void; onBack: () => void; }> = ({ onComplete, onBack }) => {
+    const checkboxClass = "h-4 w-4 rounded border-gray-300 text-fit-dark-blue focus:ring-fit-dark-blue dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-fit-orange";
     return (
         <div className="space-y-6 text-center">
             <p className="text-fit-gray">Selecione os programas e configure os parâmetros iniciais de monitoramento.</p>
-            <div className="space-y-2 text-left max-w-sm mx-auto">
-                 <label className="flex items-center"><input type="checkbox"/> Ginástica Laboral</label>
-                 <label className="flex items-center"><input type="checkbox"/> Desafio de Passos</label>
-                 <label className="flex items-center"><input type="checkbox"/> Trilhas de Treinamento Físico</label>
+            <div className="space-y-3 text-left max-w-sm mx-auto">
+                 <label className="flex items-center space-x-2">
+                    <input type="checkbox" className={checkboxClass} defaultChecked /> 
+                    <span>Ginástica Laboral</span>
+                </label>
+                 <label className="flex items-center space-x-2">
+                    <input type="checkbox" className={checkboxClass} defaultChecked /> 
+                    <span>Desafio de Passos</span>
+                </label>
+                 <label className="flex items-center space-x-2">
+                    <input type="checkbox" className={checkboxClass} /> 
+                    <span>Trilhas de Treinamento Físico</span>
+                </label>
             </div>
              <div className="flex justify-between pt-6">
                 <button onClick={onBack} className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg flex items-center hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors">
@@ -232,6 +242,7 @@ const Onboarding: React.FC<{
             metricas: { sono: 8, estresse: 30, humor: 5, energia: 4 },
             planoExercicio: { nome: 'Caminhada Diária', meta: '10.000 passos/dia', frequencia: 'Diária', progresso: 0 },
             setor: newCompany.setor,
+            metas: [], // Initialize with empty goals
         } as Funcionario));
         
         setEmpresas(prev => [newCompany, ...prev]);
